@@ -20,5 +20,5 @@ class PersonExtractor(BaseExtractor):
             WHERE p.id in %s;
         """
         result = self.execute_query(query, params=(tuple(person_ids),))
-        logger.info(f"По ID persons получены необходимые поля: {len(person_ids)}->{len(result)}")
+        logger.info("По ID persons получены необходимые поля: %s->%s", len(person_ids), len(result))
         return result

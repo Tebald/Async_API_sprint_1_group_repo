@@ -34,5 +34,6 @@ class PersonTransformer(BaseTransformer):
                     persons[person_id]["films"].append(film)
 
         result = [self.MODEL(**person) for person in persons.values()]
-        logger.info(f"Transformer. Записи преобразованы в {self.MODEL.__name__}: {len(details)}->{len(result)}")
+        logger.info("Transformer. Записи преобразованы в %s: %s->%s",
+                    self.MODEL.__name__, len(details), len(result))
         return result

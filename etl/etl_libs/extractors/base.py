@@ -49,7 +49,7 @@ class BaseExtractor(ABC):
             last_id=last_id
         )
         results = self.execute_query(query)
-        logger.info(f"Extractor. Получено {len(results)} записей")
+        logger.info("Extractor. Получено %s записей", len(results))
         try:
             last_record = results[-1]
             return [result["id"] for result in results], last_record["modified"], last_record["id"],
@@ -71,7 +71,8 @@ class BaseExtractor(ABC):
         )
         results = self.execute_query(query, params=(tuple(related_ids),))
         logger.info(
-            f'Extractor {main_table}: получены ID обновлённых записей из {related_table}. Получено: {len(related_ids)} -> {len(results)}')
+            'Extractor %s: получены ID обновлённых записей из %s. Получено: %s->%s',
+            main_table, related_table, len(related_ids), len(results))
         return [result["id"] for result in results]
 
     def get_earliest_modified_date(self, table: str) -> datetime:

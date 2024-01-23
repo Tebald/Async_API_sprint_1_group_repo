@@ -19,6 +19,9 @@ class ElasticsearchLoader:
             self.client.close()
             logger.info("Соединение с Elasticsearch закрыто")
 
+    def index_exists(self, index_name):
+        return self.client.indices.exists(index=index_name)
+
     @staticmethod
     def prepare_data(index: str, data: list[BaseModel]) -> Generator[dict[str, Any], None, None]:
         for doc in data:
@@ -26,8 +29,11 @@ class ElasticsearchLoader:
 
     @backoff.on_exception(backoff.expo, TransportError, max_time=300, jitter=backoff.random_jitter)
     def load_to_elasticsearch(self, index: str, data: list) -> None:
+        if not self.index_exists(index):
+            logger.error("Loader. Ошибка при записи в индекс. Индекс %s не найден.", index)
+            return
         try:
             bulk(self.client, self.prepare_data(index, data))
-            logger.info(f"Loader. Записи успешно загружены в индекс {index}")
+            logger.info("Loader. Записи успешно загружены в индекс %s", index)
         except BulkIndexError:
-            logger.error("Ошибка индексации", exc_info=True)
+            logger.error("Loader. При записи в индекс возникла ошибка.", exc_info=True)
