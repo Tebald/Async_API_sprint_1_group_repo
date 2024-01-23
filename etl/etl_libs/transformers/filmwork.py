@@ -38,25 +38,27 @@ class FilmworkTransformer(BaseTransformer):
             film["genre"] = list(film["genre"])
 
         result = [self.MODEL(**film) for film in films.values()]
-        logger.info(f"Transformer. Записи преобразованы в {self.MODEL.__name__}: {len(details)}->{len(result)}")
+        logger.info("Transformer. Записи преобразованы в %s: %s->%s", self.MODEL.__name__, len(details), len(result))
         return result
 
     def _process_role(self, film_id: str, detail: dict[str, Any], films: dict[str, Any]) -> None:
+        roles = ['actor', 'writer', 'director', None]
         role = detail["role"]
         person = {"id": detail["person_id"], "name": detail["full_name"]}
         full_name = detail["full_name"]
 
-        try:
-            if role == "actor" and person not in films[film_id]["actors"]:
-                films[film_id]["actors"].append(person)
-                films[film_id]["actors_names"].append(full_name)
+        if role not in roles:
+            logger.error(f"Не удалось определить роль %s", role)
+            return
 
-            elif role == "writer" and person not in films[film_id]["writers"]:
-                films[film_id]["writers"].append(person)
-                films[film_id]["writers_names"].append(full_name)
+        if role == "actor" and person not in films[film_id]["actors"]:
+            films[film_id]["actors"].append(person)
+            films[film_id]["actors_names"].append(full_name)
 
-            elif role == "director" and person not in films[film_id]["directors"]:
-                films[film_id]["directors"].append(person)
-                films[film_id]["directors_names"].append(full_name)
-        except KeyError:
-            logger.error(f"Не удалось определить роль {role}")
+        elif role == "writer" and person not in films[film_id]["writers"]:
+            films[film_id]["writers"].append(person)
+            films[film_id]["writers_names"].append(full_name)
+
+        elif role == "director" and person not in films[film_id]["directors"]:
+            films[film_id]["directors"].append(person)
+            films[film_id]["directors_names"].append(full_name)

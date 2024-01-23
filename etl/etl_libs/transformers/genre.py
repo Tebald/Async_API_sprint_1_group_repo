@@ -12,5 +12,6 @@ class GenreTransformer(BaseTransformer):
 
     def consolidate(self, details: list[dict[str, Any]]) -> list[GenreModel]:
         result = [self.MODEL(**genre) for genre in details]
-        logger.info(f"Transformer. Записи преобразованы в {self.MODEL.__name__}: {len(details)}->{len(result)}")
+        logger.info("Transformer. Записи преобразованы в %s: %s->%s",
+                    self.MODEL.__name__, len(details), len(result))
         return result

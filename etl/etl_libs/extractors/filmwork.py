@@ -29,5 +29,5 @@ class FilmworkExtractor(BaseExtractor):
             WHERE fw.id IN %s;
         """
         result = self.execute_query(query, params=(tuple(film_ids),))
-        logger.info(f"По ID film_works получены необходимые поля: {len(film_ids)}->{len(result)}")
+        logger.info("По ID film_works получены необходимые поля: %s->%s", len(film_ids), len(result))
         return result

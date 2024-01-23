@@ -9,6 +9,4 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . /app
 
-COPY start.sh create_index.sh ./
-
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["python", "main.py"]

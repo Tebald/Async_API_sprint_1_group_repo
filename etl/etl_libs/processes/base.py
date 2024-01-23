@@ -21,7 +21,23 @@ class BaseETLProcess(ABC):
     loader: ElasticsearchLoader
 
     def __init__(self):
-        self.state = State(storage=JsonFileStorage(self.MAIN_TABLE + '.json'))
+        self.state = State(storage=JsonFileStorage(self.MAIN_TABLE + ".json"))
+
+    @staticmethod
+    def configure_logging(log_path: str, log_level: str = "INFO",
+                          log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s") -> None:
+        """Logging config."""
+
+        log_levels = logging.getLevelNamesMapping()
+        if log_level not in log_levels:
+            print(f"Wrong log level. Received {log_level}, "
+                  f"Expected one from: {log_levels.keys()}")
+            raise ValueError()
+
+        logging.basicConfig(
+            handlers=[logging.FileHandler(log_path), logging.StreamHandler()],
+            level=log_levels[log_level],
+            format=log_format)
 
     @staticmethod
     def get_state_last_modified_key(table: str) -> str:
@@ -32,16 +48,16 @@ class BaseETLProcess(ABC):
         return table + '_last_uuid'
 
     def run(self):
-        logger.info("==============================================================================")
+        logger.info("=" * 80)
         logger.info("Запуск ETL")
         for table in self.TABLES:
             try:
                 self.process_table(table)
             except Exception as e:
-                logger.error(f"Таблица {self.MAIN_TABLE}: ошибка при обработке таблицы {table}: {e}")
+                logger.error("Таблица %s: ошибка при обработке таблицы %s: %s", self.MAIN_TABLE, table, e)
                 continue
         logger.info("ETL завершил работу")
-        logger.info("==============================================================================")
+        logger.info("=" * 80)
         self.extractor.disconnect()
         self.loader.close()
 
@@ -64,15 +80,15 @@ class BaseETLProcess(ABC):
         last_modified = self.get_last_modified(last_stated_modified, table)
         last_uuid = last_stated_uuid or "00000000-0000-0000-0000-000000000000"
 
-        logger.info("==============================================================================")
-        logger.info(f"Таблица {self.MAIN_TABLE}: начат процесс загрузки обновлений по {table}")
+        logger.info("=" * 80)
+        logger.info("Таблица %s: начат процесс загрузки обновлений по %s", self.MAIN_TABLE, table)
         while True:
-            logger.info("==============================================================================")
+            logger.info("=" * 80)
             updated_records, last_modified_of_batch, last_uuid_of_batch = self.extractor.fetch_updated_records(table,
                                                                                                                last_modified,
                                                                                                                last_uuid)
             if not updated_records:
-                logger.info(f"Таблица {self.MAIN_TABLE}: все обновления по {table} загружены")
+                logger.info("Таблица %s: все обновления по %s загружены", self.MAIN_TABLE, table)
                 break
 
             transformed_data = self.transform_data(table, updated_records)

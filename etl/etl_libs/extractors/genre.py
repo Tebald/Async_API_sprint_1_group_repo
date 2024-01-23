@@ -17,5 +17,5 @@ class GenreExtractor(BaseExtractor):
             WHERE g.id in %s;
         """
         result = self.execute_query(query, params=(tuple(genre_ids),))
-        logger.info(f"По ID genres получены необходимые поля: {len(genre_ids)}->{len(result)}")
+        logger.info("По ID genres получены необходимые поля: %s->%s", len(genre_ids), len(result))
         return result
