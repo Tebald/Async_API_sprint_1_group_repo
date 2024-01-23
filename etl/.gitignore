@@ -134,5 +134,3 @@ dmypy.json
 # .idea
 .idea
 /.ruff_cache/
-/etl/storage.json
-/tests.json

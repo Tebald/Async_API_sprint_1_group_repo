@@ -1,7 +1,9 @@
 import logging
 
-from etl.config import settings
-from etl.etl_proccess import FilmworkETLProcess, GenreETLProcess, PersonETLProcess
+from etl_libs.config import settings
+from etl_libs.processes.filmwork import FilmworkETLProcess
+from etl_libs.processes.genre import GenreETLProcess
+from etl_libs.processes.person import PersonETLProcess
 
 
 def main():

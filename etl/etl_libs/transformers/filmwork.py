@@ -1,20 +1,10 @@
 import logging
-from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic import BaseModel
-
-from etl.models import FilmworkModel, GenreModel, PersonModel
+from etl_libs.models import FilmworkModel
+from etl_libs.transformers.base import BaseTransformer
 
 logger = logging.getLogger(__name__)
-
-
-class BaseTransformer(ABC):
-    TRANSFORM_TO_MODEL: BaseModel
-
-    @abstractmethod
-    def consolidate(self, details: list[dict[str, Any]]) -> list[BaseModel]:
-        pass
 
 
 class FilmworkTransformer(BaseTransformer):
@@ -70,43 +60,3 @@ class FilmworkTransformer(BaseTransformer):
                 films[film_id]["directors_names"].append(full_name)
         except KeyError:
             logger.error(f"Не удалось определить роль {role}")
-
-
-class GenreTransformer(BaseTransformer):
-    MODEL = GenreModel
-
-    def consolidate(self, details: list[dict[str, Any]]) -> list[GenreModel]:
-        result = [self.MODEL(**genre) for genre in details]
-        logger.info(f"Transformer. Записи преобразованы в {self.MODEL.__name__}: {len(details)}->{len(result)}")
-        return result
-
-
-class PersonTransformer(BaseTransformer):
-    MODEL = PersonModel
-
-    def consolidate(self, details: list[dict[str, Any]]) -> list[PersonModel]:
-        persons = {}
-
-        for detail in details:
-            person_id = detail["p_id"]
-            if person_id not in persons:
-                persons[person_id] = {
-                    "id": person_id,
-                    "full_name": detail["full_name"],
-                    "films": []
-                }
-
-            film_id = detail.get("film_id")
-            if film_id:
-                person_films = persons[person_id]['films']
-                matching_films = [film for film in person_films if film["id"] == film_id]
-
-                if matching_films:
-                    matching_films[0]["roles"].append(detail['role'])
-                else:
-                    film = {"id": film_id, "roles": [detail["role"]]}
-                    persons[person_id]["films"].append(film)
-
-        result = [self.MODEL(**person) for person in persons.values()]
-        logger.info(f"Transformer. Записи преобразованы в {self.MODEL.__name__}: {len(details)}->{len(result)}")
-        return result

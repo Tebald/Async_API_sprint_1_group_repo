@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any
 
 import backoff
 import psycopg2
@@ -86,63 +85,3 @@ class BaseExtractor(ABC):
     @abstractmethod
     def fetch_by_ids(self, ids: list[str]):
         pass
-
-
-class FilmworkExtractor(BaseExtractor):
-    def fetch_by_ids(self, film_ids: list[str]) -> list[dict[str, Any]]:
-        query = """
-            SELECT DISTINCT
-                fw.id as fw_id,
-                fw.title,
-                fw.description,
-                fw.rating,
-                fw.type,
-                fw.created,
-                fw.modified,
-                pfw.role,
-                p.id as person_id,
-                p.full_name,
-                g.name as genre_name
-            FROM content.film_work fw
-            LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
-            LEFT JOIN content.person p ON p.id = pfw.person_id
-            LEFT JOIN content.genre_film_work gfw ON gfw.film_work_id = fw.id
-            LEFT JOIN content.genre g ON g.id = gfw.genre_id
-            WHERE fw.id IN %s;
-        """
-        result = self.execute_query(query, params=(tuple(film_ids),))
-        logger.info(f"По ID film_works получены необходимые поля: {len(film_ids)}->{len(result)}")
-        return result
-
-
-class GenreExtractor(BaseExtractor):
-    def fetch_by_ids(self, genre_ids: list[str]) -> list[dict[str, Any]]:
-        query = """
-            SELECT DISTINCT
-                g.id as id,
-                g.name,
-                g.description
-            FROM content.genre g
-            WHERE g.id in %s;
-        """
-        result = self.execute_query(query, params=(tuple(genre_ids),))
-        logger.info(f"По ID genres получены необходимые поля: {len(genre_ids)}->{len(result)}")
-        return result
-
-
-class PersonExtractor(BaseExtractor):
-    def fetch_by_ids(self, person_ids: list[str]) -> list[dict[str, Any]]:
-        query = """
-            SELECT DISTINCT
-                p.id as p_id,
-                p.full_name,
-                pfw.role,
-                f.id as film_id
-            FROM content.person p
-            LEFT JOIN content.person_film_work pfw ON pfw.person_id = p.id
-            LEFT JOIN content.film_work f ON f.id = pfw.film_work_id
-            WHERE p.id in %s;
-        """
-        result = self.execute_query(query, params=(tuple(person_ids),))
-        logger.info(f"По ID persons получены необходимые поля: {len(person_ids)}->{len(result)}")
-        return result

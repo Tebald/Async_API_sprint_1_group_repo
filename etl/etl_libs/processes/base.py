@@ -4,10 +4,10 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from etl.extract import FilmworkExtractor, BaseExtractor, GenreExtractor, PersonExtractor
-from etl.load import ElasticsearchLoader
-from etl.storage import State, JsonFileStorage
-from etl.transform import FilmworkTransformer, BaseTransformer, GenreTransformer, PersonTransformer
+from etl_libs.extractors.base import BaseExtractor
+from etl_libs.loaders.loader import ElasticsearchLoader
+from etl_libs.storage import State, JsonFileStorage
+from etl_libs.transformers.base import BaseTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -83,48 +83,3 @@ class BaseETLProcess(ABC):
 
             last_modified = last_modified_of_batch
             last_uuid = last_uuid_of_batch
-
-
-class FilmworkETLProcess(BaseETLProcess):
-    TABLES = ("film_work", "genre", "person",)
-    INDICES_MAPPING = {"film_work": "movies", "genre": "genres", "person": "persons"}
-    MAIN_TABLE = "film_work"
-    EXTRACTOR_CLASS = FilmworkExtractor
-    TRANSFORMER_CLASS = FilmworkTransformer
-    LOADER_CLASS = ElasticsearchLoader
-
-    def __init__(self, postgres_dsl: dict, es_host: str):
-        self.extractor = self.EXTRACTOR_CLASS(postgres_dsl)
-        self.transformer = self.TRANSFORMER_CLASS()
-        self.loader = self.LOADER_CLASS(es_host)
-        super().__init__()
-
-
-class GenreETLProcess(BaseETLProcess):
-    TABLES = ("film_work", "genre",)
-    INDICES_MAPPING = {"film_work": "movies", "genre": "genres"}
-    MAIN_TABLE = "genre"
-    EXTRACTOR_CLASS = GenreExtractor
-    TRANSFORMER_CLASS = GenreTransformer
-    LOADER_CLASS = ElasticsearchLoader
-
-    def __init__(self, postgres_dsl: dict, es_host: str):
-        self.extractor = self.EXTRACTOR_CLASS(postgres_dsl)
-        self.transformer = self.TRANSFORMER_CLASS()
-        self.loader = self.LOADER_CLASS(es_host)
-        super().__init__()
-
-
-class PersonETLProcess(BaseETLProcess):
-    TABLES = ("film_work", "person",)
-    INDICES_MAPPING = {"film_work": "movies", "person": "persons"}
-    MAIN_TABLE = "person"
-    EXTRACTOR_CLASS = PersonExtractor
-    TRANSFORMER_CLASS = PersonTransformer
-    LOADER_CLASS = ElasticsearchLoader
-
-    def __init__(self, postgres_dsl: dict, es_host: str):
-        self.extractor = self.EXTRACTOR_CLASS(postgres_dsl)
-        self.transformer = self.TRANSFORMER_CLASS()
-        self.loader = self.LOADER_CLASS(es_host)
-        super().__init__()
