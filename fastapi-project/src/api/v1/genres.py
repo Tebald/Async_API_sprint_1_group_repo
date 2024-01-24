@@ -1,7 +1,9 @@
 from http import HTTPStatus
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from pydantic.types import UUID4
 
 from services.transfer import TransferService, get_transfer_service
 
@@ -14,11 +16,11 @@ class Genre(BaseModel):
     Response model for Genre object.
     This class contains info we return to a user.
     """
-    uuid: str
+    uuid: UUID4
     name: str
 
 
-@router.get('/')
+@router.get('/', response_model=List[Genre])
 async def list_of_genres(genre_service: TransferService = Depends(get_transfer_service)) -> list:
     """
     Returns a list of all genres.

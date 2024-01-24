@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Optional
 
 from db.elastic import get_elastic
-from db.redis import get_redis
+from db._redis import get_redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 from models.film import Film

@@ -17,11 +17,11 @@ class Film(BaseModel):
     uuid: str
     title: str
     description: str | None
-    genres: list | None
+    genres: list[str] | None
     imdb_rating: float | None
-    actors: list
-    writers: list
-    directors: list
+    actors: list[str]
+    writers: list[str]
+    directors: list[str]
 
 
 class FilmShort(BaseModel):
@@ -34,7 +34,7 @@ class FilmShort(BaseModel):
     imdb_rating: float | None
 
 
-@router.get('/search')
+@router.get('/', response_model=FilmShort)
 async def list_of_films(film_service: TransferService = Depends(get_transfer_service)) -> list:
     # todo: use a different method to retrieve all films from elastic.
     films = await film_service.get_all_items(index='movies')
