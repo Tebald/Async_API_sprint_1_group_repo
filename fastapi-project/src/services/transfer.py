@@ -68,6 +68,7 @@ class TransferService:
 
         for item in response['hits']['hits']:
             data = model(**item['_source'])
+            logging.debug(data)
             result.append(data)
 
         return result

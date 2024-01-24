@@ -21,7 +21,7 @@ class Film(BaseModel):
     imdb_rating: float | None
     actors: list
     writers: list
-    director: list
+    directors: list
 
     class Config:
         # Заменяем стандартную работу с json на более быструю
