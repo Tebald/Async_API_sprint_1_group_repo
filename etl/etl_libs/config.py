@@ -8,11 +8,14 @@ class Config(BaseSettings):
     db_port: str
     db_host: str
     es_host: str
+    es_indexes: list
     interval: int
     log_path: str
     log_level: str
     log_format: str
     index_jsons_dir: str
+    host: str
+    port: int
 
     class Config:
         env_file = "../.env"
