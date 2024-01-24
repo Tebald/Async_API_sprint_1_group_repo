@@ -61,5 +61,5 @@ async def film_details(film_id: str, film_service: TransferService = Depends(get
         imdb_rating=film.imdb_rating,
         actors=film.actors,
         writers=film.writers,
-        directors=film.director
+        directors=film.directors
     )
