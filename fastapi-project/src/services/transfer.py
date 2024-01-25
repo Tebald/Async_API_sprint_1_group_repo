@@ -24,9 +24,18 @@ class TransferService:
         self.redis = redis
         self.elastic = elastic
 
-    async def get_all_items(self, index: str) -> Optional[list[Film or Genre or Person]]:
+    async def get_all_items(
+            self,
+            index: str,
+            filter_body: dict = None) -> Optional[list[Film or Genre or Person]]:
+        """
 
-        items = await self._get_items_from_elastic(index)
+        :param index:
+        :param filter_body:
+        :return:
+        """
+
+        items = await self._get_items_from_elastic(index, filter_body)
         if not items:
             return None
 
@@ -34,6 +43,11 @@ class TransferService:
 
     @staticmethod
     def get_model(index: str):
+        """
+        Returns a class (to store elastic data) based on index name.
+        :param index:
+        :return:
+        """
         indexes = {
             'movies': Film,
             'persons': Person,
@@ -48,20 +62,27 @@ class TransferService:
 
         return data_model
 
-    async def _get_items_from_elastic(self, index: str) -> Optional[list[Film or Genre or Person]]:
+    async def _get_items_from_elastic(
+            self,
+            index: str,
+            filter_body: dict = None) -> Optional[list[Film or Genre or Person]]:
         """
-        Retrieves all entries from elastic index.
-        It is not recommended to use this method to retrieve large amount of rows.
+        Retrieves entries from elastic index using a filter.
+        If filter is not set, all the docs are retrieved.
         Maximum possible rows amount is 10k.
         :param index: 'movies'
+        :param filter_body: {"query": {}}
         :return: [Film, Film_a, Film_b, ... Film_n]
         """
         result = []
         model = TransferService.get_model(index)
-        body = {"query": {"match_all": {}}}
+
+        if not filter_body:
+            filter_body = {"query": {"match_all": {}}}
+
         try:
 
-            response = await self.elastic.search(index=index, body=body, size=1000)
+            response = await self.elastic.search(index=index, body=filter_body, size=1000)
         except NotFoundError:
             return None
         logging.info('Retrieved %s info from elastic: %s', index, response['hits'])
