@@ -8,6 +8,15 @@ logger = logging.getLogger(__name__)
 
 class FilmworkExtractor(BaseExtractor):
     def fetch_by_ids(self, film_ids: list[str]) -> list[dict[str, Any]]:
+        """Fetches film_works by their ids.
+
+        Args:
+            film_ids: A list of the ids from 'film_work' table.
+
+        Returns:
+            List of the dicts where keys are requested fields,
+                and values are values of record.
+        """
         query = """
             SELECT DISTINCT
                 fw.id as fw_id,

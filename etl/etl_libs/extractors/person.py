@@ -8,6 +8,15 @@ logger = logging.getLogger(__name__)
 
 class PersonExtractor(BaseExtractor):
     def fetch_by_ids(self, person_ids: list[str]) -> list[dict[str, Any]]:
+        """Fetches persons by their ids.
+
+        Args:
+            person_ids: A list of the ids from the 'persons' table.
+
+        Returns:
+            List of the dicts where keys are requested fields,
+                and values are values from record.
+        """
         query = """
             SELECT DISTINCT
                 p.id as p_id,
