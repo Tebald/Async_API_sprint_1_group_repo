@@ -8,6 +8,15 @@ logger = logging.getLogger(__name__)
 
 class GenreExtractor(BaseExtractor):
     def fetch_by_ids(self, genre_ids: list[str]) -> list[dict[str, Any]]:
+        """Fetches genres by their ids.
+
+        Args:
+            genre_ids: A list of the ids from 'genre' table.
+
+        Returns:
+            List of the dicts where keys are requested fields,
+                and values are values of record.
+        """
         query = """
             SELECT DISTINCT
                 g.id as id,
