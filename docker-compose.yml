@@ -42,6 +42,15 @@ services:
       elasticsearch:
         condition: service_healthy
 
+  redis:
+    image: redis:7.2.4
+    expose:
+      - ${REDIS_PORT}
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
 volumes:
   postgres_data:
   elastic_data:

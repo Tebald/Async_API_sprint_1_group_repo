@@ -1,52 +1,44 @@
 from http import HTTPStatus
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from fastapi_pagination import Page, paginate
 
-# from services.film import FilmService, get_film_service
-from services.transfer import TransferService, get_transfer_service
+from services import (
+    FilmsService, GenresService, TransferService,
+    get_genres_service, get_films_service, get_transfer_service
+)
+from schemas import Film, FilmShort
+
 
 router = APIRouter()
 
 
-class Film(BaseModel):
-    """
-    Response model for Film object.
-    This class contains info we return to a user.
-    """
-    uuid: str
-    title: str
-    description: str | None
-    genres: list[str] | None
-    imdb_rating: float | None
-    actors: list[str]
-    writers: list[str]
-    directors: list[str]
+@router.get('/', response_model=Page[FilmShort])
+async def list_of_films(
+        film_service: FilmsService = Depends(get_films_service),
+        genre_service: TransferService = Depends(get_genres_service),
+        sort: str = Query('-imdb_rating', description="Sort by field, prefix '-' for descending order"),
+        genre: Optional[str] = Query(None, description="Genre UUID for filtering")
+):
+    genre_name = None
+    if genre is not None:
+        genre_obj = await genre_service.get_by_id(genre, 'genres')
+        genre_name = genre_obj.name if genre_obj is not None else 'null'
+    films = await film_service.get_all_items(sort=sort, genre=genre_name)
 
-
-class FilmShort(BaseModel):
-    """
-    Short version of Film object.
-    It is used to form a list of films.
-    """
-    uuid: str
-    title: str
-    imdb_rating: float | None
-
-
-@router.get('/', response_model=FilmShort)
-async def list_of_films(film_service: TransferService = Depends(get_transfer_service)) -> list:
-    # todo: use a different method to retrieve all films from elastic.
-    films = await film_service.get_all_items(index='movies')
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
-    return [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    print(len(films))
+    res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    return paginate(res)
 
 
 @router.get('/{film_id}', response_model=Film)
-async def film_details(film_id: str, film_service: TransferService = Depends(get_transfer_service)) -> Film:
-    film = await film_service.get_by_id(object_id=film_id, index='movies')
+async def film_details(film_id: str, film_service: FilmsService = Depends(get_films_service)) -> Film:
+    film = await film_service.get_by_id(object_id=film_id)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 

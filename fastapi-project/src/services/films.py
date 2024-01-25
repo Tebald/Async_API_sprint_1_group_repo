@@ -10,24 +10,24 @@ from models.film import Film
 from models.genre import Genre
 from models.person import Person
 from redis.asyncio import Redis
+from services.transfer import TransferService
 
 
-class TransferService:
+class FilmsService(TransferService):
     """
     Class for buisness logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and
     send it to api modules.
     """
-    index = None
-    model = None
-    CACHE_EXPIRE_IN_SECONDS = 60 * 5
+    index = 'movies'
+    model = Film
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
-        self.elastic = elastic
-
-    async def get_all_items(self, **kwargs) -> Optional[List]:
-        items = await self._get_items_from_elastic(**kwargs)
+    async def get_all_items(
+            self,
+            sort: str,
+            genre: Optional[str] = None
+    ) -> Optional[List[Film]]:
+        items = await self._get_items_from_elastic(sort, genre)
         if not items:
             return None
 
@@ -49,7 +49,11 @@ class TransferService:
 
         return data_model
 
-    async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
+    async def _get_items_from_elastic(
+            self,
+            sort: str,
+            genre: Optional[str] = None
+    ) -> Optional[list[Film or Genre or Person]]:
         """
         Retrieves all entries from elastic index.
         It is not recommended to use this method to retrieve large amount of rows.
@@ -57,10 +61,26 @@ class TransferService:
         :param index: 'movies'
         :return: [Film, Film_a, Film_b, ... Film_n]
         """
+        sort_order = 'desc' if sort.startswith('-') else 'asc'
+        sort_field = sort.lstrip('-')
+
+        body = {
+            "query": {
+                "match_all": {}
+            } if not genre else {
+                    "match": {
+                        "genre": genre
+                    }
+                },
+            "sort": [
+                {sort_field: {"order": sort_order}}
+            ]
+        }
+
         result = []
         scroll = '1m'
         try:
-            response = await self.elastic.search(index=self.index, body={"query": {"match_all": {}}}, scroll=scroll,
+            response = await self.elastic.search(index=self.index, body=body, scroll=scroll,
                                                  size=100)
             while response['hits']['hits']:
                 for item in response['hits']['hits']:
@@ -74,27 +94,6 @@ class TransferService:
             await self.elastic.clear_scroll(scroll_id=response['_scroll_id'])
 
         return result
-
-    async def get_by_id(self, object_id: str) -> Optional[Film or Genre or Person]:
-        """
-        Returns object Film/Person/Genre.
-        It is optional since the object can be absent in the elastic/cache.
-        :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :param index: 'movies'
-        :return: Film
-        """
-        # Trying to get the data from cache.
-        entity = await self._object_from_cache(object_id=object_id, index=self.index)
-        if not entity:
-            # If the entity is not in the cache, get it from Elasticsearch.
-            entity = await self._get_object_from_elastic(object_id=object_id, index=self.index)
-            if not entity:
-                # If the entity is not in the Elasticsearch.
-                return None
-            # Save the data in cache.
-            await self._put_object_to_cache(entity)
-
-        return entity
 
     async def _get_object_from_elastic(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
         """
@@ -141,10 +140,10 @@ class TransferService:
 
 
 @lru_cache()
-def get_transfer_service(
+def get_films_service(
         redis: Redis = Depends(get_redis),
         elastic: AsyncElasticsearch = Depends(get_elastic),
-) -> TransferService:
+) -> FilmsService:
     """
     Provider of TransferService.
     'Depends' declares that Redis and Elasticsearch are necessary.
@@ -154,4 +153,4 @@ def get_transfer_service(
     :param elastic:
     :return:
     """
-    return TransferService(redis, elastic)
+    return FilmsService(redis, elastic)
