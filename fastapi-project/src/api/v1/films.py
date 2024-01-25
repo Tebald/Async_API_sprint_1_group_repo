@@ -24,7 +24,7 @@ async def list_of_films(
 ):
     genre_name = None
     if genre is not None:
-        genre_obj = await genre_service.get_by_id(genre, 'genres')
+        genre_obj = await genre_service.get_by_id(genre)
         genre_name = genre_obj.name if genre_obj is not None else 'null'
     films = await film_service.get_all_items(sort=sort, genre=genre_name)
 
@@ -37,8 +37,8 @@ async def list_of_films(
 
 
 @router.get('/{film_id}', response_model=Film)
-async def film_details(film_id: str, film_service: FilmsService = Depends(get_films_service)) -> Film:
-    film = await film_service.get_by_id(object_id=film_id)
+async def film_details(uuid: str, film_service: FilmsService = Depends(get_films_service)) -> Film:
+    film = await film_service.get_by_id(object_id=uuid)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
@@ -49,7 +49,7 @@ async def film_details(film_id: str, film_service: FilmsService = Depends(get_fi
         uuid=film.id,
         title=film.title,
         description=film.description,
-        genres=film.genre,
+        genre=film.genre,
         imdb_rating=film.imdb_rating,
         actors=film.actors,
         writers=film.writers,

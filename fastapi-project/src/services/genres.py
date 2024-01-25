@@ -22,13 +22,6 @@ class GenresService(TransferService):
     index = 'genres'
     model = Genre
 
-    async def get_all_items(self) -> Optional[List[Film]]:
-        items = await self._get_items_from_elastic()
-        if not items:
-            return None
-
-        return items
-
     @staticmethod
     def get_model(index: str):
         indexes = {
@@ -44,47 +37,6 @@ class GenresService(TransferService):
         data_model = indexes[index]
 
         return data_model
-
-    async def _get_items_from_elastic(self) -> Optional[list[Film or Genre or Person]]:
-        """
-        Retrieves all entries from elastic index.
-        It is not recommended to use this method to retrieve large amount of rows.
-        Maximum possible rows amount is 10k.
-        :param index: 'movies'
-        :return: [Film, Film_a, Film_b, ... Film_n]
-        """
-        sort_order = 'desc' if sort.startswith('-') else 'asc'
-        sort_field = sort.lstrip('-')
-
-        body = {
-            "query": {
-                "match_all": {}
-            } if not genre else {
-                "match": {
-                    "genre": genre
-                }
-            },
-            "sort": [
-                {sort_field: {"order": sort_order}}
-            ]
-        }
-
-        result = []
-        scroll = '1m'
-        try:
-            response = await self.elastic.search(index=self.index, body=body, scroll=scroll,
-                                                 size=100)
-            while response['hits']['hits']:
-                for item in response['hits']['hits']:
-                    data = self.model(**item['_source'])
-                    result.append(data)
-                response = await self.elastic.scroll(scroll_id=response['_scroll_id'], scroll=scroll)
-        except NotFoundError:
-            return None
-        if '_scroll_id' in response:
-            await self.elastic.clear_scroll(scroll_id=response['_scroll_id'])
-
-        return result
 
     async def _get_object_from_elastic(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
         """
