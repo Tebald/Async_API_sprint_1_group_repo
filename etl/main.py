@@ -1,68 +1,62 @@
 import logging
 import time
 
-from etl_libs.config import settings
-from etl_libs.elastic_lib import Elastic
+from elasticsearch import Elasticsearch
+
+from etl_libs.config import get_settings
 from etl_libs.processes.base import BaseETLProcess
 from etl_libs.processes.filmwork import FilmworkETLProcess
 from etl_libs.processes.genre import GenreETLProcess
 from etl_libs.processes.person import PersonETLProcess
 
 
-def check_indexes_first(es_indexes: list, host: str, port: int) -> None:
+def check_indexes_first(indexes: list, es_dsn: str) -> None:
     """
     Function to check if necessary indexes are present in elastic.
     If all indexes are present, proceeds back to main function.
-    :param es_indexes: ['movies', 'persons', 'genres']
-    :param host: 'elasticsearch'
-    :param port: 9200
+    :param indexes: ['movies', 'persons', 'genres']
+    :param es_dsn: 'http://es_host:es_port'
     :return:
     """
+    es = Elasticsearch(es_dsn)
+
     while True:
         # This part is necessary to prevent data migration (automatic index creation)
         # until we add index manually.
-        index_exist = []
-        for index in es_indexes:
-            check = Elastic.check_index(
-                host=host,
-                port=port,
-                index_name=index)
+        missing_indexes = [index for index in indexes if not es.indices.exists(index=index)]
 
-            logging.info('Status code: %s. Text: %s', check['status_code'], check['text'])
+        if not missing_indexes:
+            break
 
-            if not check.get('errors', ''):
-                index_exist.append(True)
-
-        if len(index_exist) == len(es_indexes):
-            return
-
-        time.sleep(30)
+        time.sleep(10)
 
 
 def main():
+    settings = get_settings()
+
     logger = logging.getLogger(__name__)
     BaseETLProcess.configure_logging(
-        log_path=settings.log_path,
-        log_level=settings.log_level,
-        log_format=settings.log_format
+        log_path=settings.logger.path,
+        log_level=settings.logger.level,
+        log_format=settings.logger.format
     )
 
-    dsl = {
-        "dbname": settings.postgres_db,
-        "user": settings.postgres_user,
-        "password": settings.postgres_password,
-        "host": settings.db_host,
-        "port": settings.db_port,
+    pg_dsn = {
+        "dbname": settings.postgres.db,
+        "user": settings.postgres.user,
+        "password": settings.postgres.password,
+        "host": settings.postgres.host,
+        "port": settings.postgres.port,
     }
-
-    es_host = settings.es_host
+    es_dsn = f"http://{settings.elastic.host}:{settings.elastic.port}"
 
     # Соединения с PG и ES открываются и закрываются единожды (questionable)
-    etl_film_works = FilmworkETLProcess(postgres_dsl=dsl, es_host=es_host)
-    etl_genres = GenreETLProcess(postgres_dsl=dsl, es_host=es_host)
-    etl_persons = PersonETLProcess(postgres_dsl=dsl, es_host=es_host)
+    etl_film_works = FilmworkETLProcess(pg_dsn=pg_dsn, es_dsn=es_dsn)
+    etl_genres = GenreETLProcess(pg_dsn=pg_dsn, es_dsn=es_dsn)
+    etl_persons = PersonETLProcess(pg_dsn=pg_dsn, es_dsn=es_dsn)
 
-    check_indexes_first(es_indexes=settings.es_indexes, host=settings.host, port=settings.port)
+    logger.info('Ожидается создание индексов...')
+    check_indexes_first(indexes=settings.elastic.indexes, es_dsn=es_dsn)
 
     logger.info("НАЧИНАЕМ")
     try:

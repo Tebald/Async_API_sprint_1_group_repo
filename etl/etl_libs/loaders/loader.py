@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class ElasticsearchLoader:
-    def __init__(self, host: str):
-        self.client = Elasticsearch(host)
+    def __init__(self, dsn: dict[str, str]):
+        self.client = Elasticsearch(dsn)
 
     def close(self):
         if self.client:

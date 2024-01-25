@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 class FilmworkETLProcess(BaseETLProcess):
     TABLES = ("film_work", "genre", "person",)
-    INDICES_MAPPING = {"film_work": "movies", "genre": "genres", "person": "persons"}
+    INDEXES_MAPPING = {"film_work": "movies", "genre": "genres", "person": "persons"}
     MAIN_TABLE = "film_work"
     EXTRACTOR_CLASS = FilmworkExtractor
     TRANSFORMER_CLASS = FilmworkTransformer
     LOADER_CLASS = ElasticsearchLoader
 
-    def __init__(self, postgres_dsl: dict, es_host: str):
-        self.extractor = self.EXTRACTOR_CLASS(postgres_dsl)
+    def __init__(self, pg_dsn: dict, es_dsn: str):
+        self.extractor = self.EXTRACTOR_CLASS(pg_dsn)
         self.transformer = self.TRANSFORMER_CLASS()
-        self.loader = self.LOADER_CLASS(es_host)
+        self.loader = self.LOADER_CLASS(es_dsn)
         super().__init__()

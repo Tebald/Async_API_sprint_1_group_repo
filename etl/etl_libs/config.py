@@ -1,25 +1,45 @@
-from pydantic.v1 import BaseSettings
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILE = '../../.env'
 
 
-class Config(BaseSettings):
-    postgres_db: str
-    postgres_user: str
-    postgres_password: str
-    db_port: str
-    db_host: str
-    es_host: str
-    es_indexes: list
-    interval: int
-    log_path: str
-    log_level: str
-    log_format: str
-    index_jsons_dir: str
+@lru_cache
+def get_settings():
+    return Settings()
+
+
+class PostgresSettings(BaseSettings):
+    db: str
+    user: str
+    password: str
     host: str
     port: int
 
-    class Config:
-        env_file = "../.env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_prefix='PG_', env_file=ENV_FILE, env_file_encoding='utf-8')
 
 
-settings = Config()
+class ElasticSettings(BaseSettings):
+    host: str
+    port: int
+    indexes: list
+
+    model_config = SettingsConfigDict(env_prefix='ES_', env_file=ENV_FILE, env_file_encoding='utf-8')
+
+
+class LoggerSettings(BaseSettings):
+    path: str
+    level: str
+    format: str
+
+    model_config = SettingsConfigDict(env_prefix='LOG_', env_file=ENV_FILE, env_file_encoding='utf-8')
+
+
+class Settings(BaseSettings):
+    postgres: PostgresSettings = PostgresSettings()
+    elastic: ElasticSettings = ElasticSettings()
+    logger: LoggerSettings = LoggerSettings()
+    interval: int
+
+    model_config = SettingsConfigDict(env_file=ENV_FILE, env_file_encoding='utf-8', extra='ignore')

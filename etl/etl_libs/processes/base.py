@@ -2,19 +2,18 @@ import logging
 from abc import ABC
 from datetime import datetime
 
-from pydantic import BaseModel
-
 from etl_libs.extractors.base import BaseExtractor
 from etl_libs.loaders.loader import ElasticsearchLoader
 from etl_libs.storage import State, JsonFileStorage
 from etl_libs.transformers.base import BaseTransformer
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
 class BaseETLProcess(ABC):
     TABLES: tuple
-    INDICES_MAPPING: dict
+    INDEXES_MAPPING: dict
     MAIN_TABLE: str
     extractor: BaseExtractor
     transformer: BaseTransformer
@@ -92,7 +91,7 @@ class BaseETLProcess(ABC):
                 break
 
             transformed_data = self.transform_data(table, updated_records)
-            self.loader.load_to_elasticsearch(self.INDICES_MAPPING[self.MAIN_TABLE], transformed_data)
+            self.loader.load_to_elasticsearch(self.INDEXES_MAPPING[self.MAIN_TABLE], transformed_data)
 
             self.state.set_state(key=self.get_state_last_modified_key(table), value=str(last_modified_of_batch))
             self.state.set_state(key=self.get_state_last_uuid_key(table), value=last_uuid_of_batch)
