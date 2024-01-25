@@ -31,14 +31,13 @@ async def list_of_films(
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
-    print(len(films))
     res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
     return paginate(res)
 
 
 @router.get('/{film_id}', response_model=Film)
-async def film_details(uuid: str, film_service: FilmsService = Depends(get_films_service)) -> Film:
-    film = await film_service.get_by_id(object_id=uuid)
+async def film_details(uuid: str, film_service: FilmsService = Depends(get_films_service)):
+    film = await film_service.get_by_id(uuid)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
@@ -55,3 +54,17 @@ async def film_details(uuid: str, film_service: FilmsService = Depends(get_films
         writers=film.writers,
         directors=film.directors
     )
+
+
+@router.get('/search/', response_model=Page[FilmShort])
+async def search_films(
+        film_service: FilmsService = Depends(get_films_service),
+        query: Optional[str] = Query('', description="Film title for searching")
+):
+    films = await film_service.search_films(query)
+
+    if not films:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
+
+    res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    return paginate(res)

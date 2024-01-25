@@ -31,12 +31,12 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
     if not genres:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of genres is empty')
 
-    return [Genre(uuid=genre.uuid, name=genre.name) for genre in genres]
+    return [Genre(uuid=genre.id, name=genre.name) for genre in genres]
 
 
 @router.get('/{genre_id}', response_model=Genre)
 async def genre_details(uuid: str, genre_service: GenresService = Depends(get_genres_service)) -> Genre:
-    genre = await genre_service.get_by_id(object_id=uuid)
+    genre = await genre_service.get_by_id(uuid)
     if not genre:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='genre not found')
 

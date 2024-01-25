@@ -33,21 +33,32 @@ class FilmsService(TransferService):
 
         return items
 
-    @staticmethod
-    def get_model(index: str):
-        indexes = {
-            'movies': Film,
-            'persons': Person,
-            'genres': Genre
+    async def search_films(self, film_title: str) -> Optional[List[Film]]:
+        result = []
+        body = {
+            "query": {
+                "multi_match": {
+                    "query": film_title,
+                    "fields": ["title"],
+                    "type": "best_fields",
+                    "fuzziness": "0"
+                }
+            },
+            "sort": [
+                "_score"
+
+            ]
         }
-        if index not in indexes:
-            raise ValueError(
-                f'Wrong model name received. Expected one from {indexes.items()}, received {index}.'
-            )
 
-        data_model = indexes[index]
+        try:
+            response = await self.elastic.search(index=self.index, body=body)
+            for item in response['hits']['hits']:
+                data = self.model(**item['_source'])
+                result.append(data)
+        except NotFoundError:
+            return None
 
-        return data_model
+        return result
 
     async def _get_items_from_elastic(
             self,
