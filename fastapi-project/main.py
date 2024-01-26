@@ -1,15 +1,13 @@
-import logging
-
 import uvicorn
+from api.v1 import films, genres
+from core import config
+from db import _redis, elastic
 from elasticsearch import AsyncElasticsearch
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 
-from api.v1 import films, genres, persons
-from core import config
-from core.logger import LOGGING
-from db import elastic, redis
 
 app = FastAPI(
     title=config.PROJECT_NAME,
@@ -23,21 +21,20 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
-    elastic.es = AsyncElasticsearch(hosts=[f'{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
+    _redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
+    elastic.es = AsyncElasticsearch(hosts=[f'{config.ES_HOST}:{config.ES_PORT}'])
 
 
 @app.on_event('shutdown')
 async def shutdown():
-    await redis.redis.close()
+    await _redis.redis.close()
     await elastic.es.close()
 
 
-# Подключаем роутер к серверу, указав префикс /v1/films
-# Теги указываем для удобства навигации по документации
 app.include_router(films.router, prefix='/api/v1/films', tags=['films'])
 app.include_router(genres.router, prefix='/api/v1/genres', tags=['genres'])
-app.include_router(persons.router, prefix='/api/v1/persons', tags=['persons'])
+
+add_pagination(app)
 
 if __name__ == '__main__':
     uvicorn.run(
