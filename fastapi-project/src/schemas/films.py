@@ -1,5 +1,4 @@
 from pydantic.main import BaseModel
-from pydantic.fields import Field
 from pydantic.types import UUID4
 
 

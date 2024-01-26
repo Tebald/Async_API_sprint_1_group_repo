@@ -1,14 +1,10 @@
-import logging
 from functools import lru_cache
-from typing import Optional, List
 
-from db.elastic import get_elastic
 from db._redis import get_redis
-from elasticsearch import AsyncElasticsearch, NotFoundError
+from db.elastic import get_elastic
+from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
-from models.film import Film
 from models.genre import Genre
-from models.person import Person
 from redis.asyncio import Redis
 from services.transfer import TransferService
 

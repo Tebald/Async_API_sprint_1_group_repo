@@ -1,8 +1,5 @@
-from http import HTTPStatus
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-
 
 router = APIRouter()
 
@@ -15,4 +12,3 @@ class Person(BaseModel):
     uuid: str
     full_name: str
     films: list | None
-

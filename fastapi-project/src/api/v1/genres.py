@@ -4,9 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from pydantic.types import UUID4
-
-from services import GenresService, get_genres_service, TransferService, get_transfer_service
-
+from services import GenresService, get_genres_service
 
 router = APIRouter()
 
