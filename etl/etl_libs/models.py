@@ -23,11 +23,15 @@ class FilmworkInline(BaseID):
     roles: list[str]
 
 
+class GenreInline(BaseID):
+    name: str
+
+
 class FilmworkModel(BaseID):
     title: str
     description: Optional[str]
     imdb_rating: float
-    genre: list[str]
+    genre: list[GenreInline]
     actors_names: list[str]
     writers_names: list[str]
     directors_names: list[str]

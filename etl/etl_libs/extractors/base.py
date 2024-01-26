@@ -41,7 +41,7 @@ class BaseExtractor(ABC):
         return self.connection.cursor()
 
     @backoff.on_exception(backoff.expo, psycopg2.Error, max_time=300, jitter=backoff.random_jitter)
-    def execute_query(self, query: str, params: Iterable) -> list:
+    def execute_query(self, query: str, params: Iterable = None) -> list:
         """Executes a query.
 
         Args:
