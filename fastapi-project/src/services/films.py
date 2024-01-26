@@ -1,14 +1,15 @@
 from functools import lru_cache
 from typing import List, Optional
 
-from db._redis import get_redis
-from db.elastic import get_elastic
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
+from redis.asyncio import Redis
+
+from db._redis import get_redis
+from db.elastic import get_elastic
 from models.film import Film
 from models.genre import Genre
 from models.person import Person
-from redis.asyncio import Redis
 from services.transfer import BaseService
 
 
@@ -24,8 +25,8 @@ class FilmsService(BaseService):
     async def get_all_items(
             self,
             sort: str,
-            genre: Optional[str] = None
-    ) -> Optional[List[Film]]:
+            genre: Optional[str] = None) -> Optional[List[Film]]:
+
         items = await self._get_items_from_elastic(sort, genre)
         if not items:
             return None
@@ -62,13 +63,11 @@ class FilmsService(BaseService):
     async def _get_items_from_elastic(
             self,
             sort: str,
-            genre: Optional[str] = None
-    ) -> Optional[list[Film or Genre or Person]]:
+            genre: Optional[str] = None) -> Optional[list[Film or Genre or Person]]:
         """
         Retrieves all entries from elastic index.
         It is not recommended to use this method to retrieve large amount of rows.
         Maximum possible rows amount is 10k.
-        :param index: 'movies'
         :return: [Film, Film_a, Film_b, ... Film_n]
         """
         sort_order = 'desc' if sort.startswith('-') else 'asc'

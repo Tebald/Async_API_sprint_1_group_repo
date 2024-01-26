@@ -1,12 +1,13 @@
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_pagination import Page, paginate
 from pydantic import BaseModel
 
-from services.transfer import TransferService, get_transfer_service
-from .films import FilmShort
+from services.persons import PersonsService, get_persons_service
 
+from .films import FilmShort
 
 router = APIRouter()
 
@@ -43,39 +44,43 @@ def get_films_ids(films: list) -> list:
 
 
 @router.get(path='/search',
-            response_model=List[Person],
-            summary="Поиск персон",
-            description="Полнотекстовый поиск по персонам",
-            response_description="Имя и список фильмов, в которых принимал участие человек")
-async def list_of_persons(
-        person_service: TransferService = Depends(get_transfer_service)) -> list:
+            response_model=Page[Person],
+            summary="Search for a person",
+            description="Full-text person search",
+            response_description="List of people")
+async def search_persons(
+        person_service: PersonsService = Depends(get_persons_service),
+        query: Optional[str] = Query('', description="Person's name for searching")):
     """
-    Returns a list of all persons.
+    Returns a list of persons depends on filter.
     :param person_service:
+    :param query:
     :return:
     """
-    persons = await person_service.get_all_items(index='persons')
+    persons = await person_service.search_persons(query)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
 
-    return [Person(uuid=person.id, full_name=person.full_name, films=person.films) for person in persons]
+    res = [Person(uuid=person.id, full_name=person.full_name, films=person.films) for person in persons]
+
+    return paginate(res)
 
 
 @router.get(path='/{person_id}',
             response_model=Person,
-            summary="Информация о персоне",
-            description="Поиск персоны по id",
-            response_description="Имя и список фильмов, в которых принимал участие человек")
+            summary="Information about a person",
+            description="Search a person by id",
+            response_description="Name and filmography")
 async def person_details(
         person_id: str,
-        person_service: TransferService = Depends(get_transfer_service)) -> Person:
+        person_service: PersonsService = Depends(get_persons_service)) -> Person:
     """
     Returns info regarding a Person, found by person_id.
     :param person_id:
     :param person_service:
     :return:
     """
-    person = await person_service.get_by_id(object_id=person_id, index='persons')
+    person = await person_service.get_by_id(object_id=person_id)
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
 
@@ -84,19 +89,19 @@ async def person_details(
 
 @router.get(path='/{person_id}/film',
             response_model=List[FilmShort],
-            summary="Информация о фильмографии",
-            description="Фильмография персоны",
-            response_description="Название и рейтинг фильмов, в которых принимал участие человек")
+            summary="Filmography information",
+            description="Filmography",
+            response_description="Name and imdb_rating of films")
 async def person_films(
         person_id: str,
-        person_service: TransferService = Depends(get_transfer_service)) -> List[FilmShort]:
+        person_service: PersonsService = Depends(get_persons_service)) -> List[FilmShort]:
     """
     Returns a list of films associated with a Person.
     :param person_id:
     :param person_service:
     :return:
     """
-    person = await person_service.get_by_id(object_id=person_id, index='persons')
+    person = await person_service.get_by_id(object_id=person_id)
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
