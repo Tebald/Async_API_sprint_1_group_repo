@@ -13,7 +13,7 @@ router = APIRouter()
 async def list_of_films(
         film_service: FilmsService = Depends(get_films_service),
         genre_service: GenresService = Depends(get_genres_service),
-        sort: str = Query('-imdb_rating', description="Sort by field, prefix '-' for descending order"),
+        sort: str = Query('-imdb_rating', description="Sort by field, prefix '-' for descending order", regex="^-?imdb_rating$"),
         genre: Optional[str] = Query(None, description="Genre UUID for filtering")
 ):
     genre_name = None

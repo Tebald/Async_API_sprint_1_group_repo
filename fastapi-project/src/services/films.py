@@ -50,7 +50,7 @@ class FilmsService(TransferService):
         }
 
         try:
-            response = await self.elastic.search(index=self.index, body=body)
+            response = await self.elastic.search(index=self.index, body=body, size=100)
             for item in response['hits']['hits']:
                 data = self.model(**item['_source'])
                 result.append(data)
