@@ -12,7 +12,7 @@ from models.person import Person
 from redis.asyncio import Redis
 
 
-class TransferService:
+class BaseService:
     """
     Class for buisness logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and
@@ -103,7 +103,7 @@ class TransferService:
         :param index: 'movies'
         :return: Film
         """
-        model = TransferService.get_model(index)
+        model = BaseService.get_model(index)
         try:
             doc = await self.elastic.get(index=index, id=object_id)
         except NotFoundError:
@@ -123,7 +123,7 @@ class TransferService:
         if not data:
             return None
 
-        model = TransferService.get_model(index)
+        model = BaseService.get_model(index)
         # pydantic предоставляет удобное API для создания объекта моделей из json
         object_data = model.parse_raw(data)
         logging.info('Retrieved object info from cache: %s', object_data)
@@ -144,7 +144,7 @@ class TransferService:
 def get_transfer_service(
         redis: Redis = Depends(get_redis),
         elastic: AsyncElasticsearch = Depends(get_elastic),
-) -> TransferService:
+) -> BaseService:
     """
     Provider of TransferService.
     'Depends' declares that Redis and Elasticsearch are necessary.
@@ -154,4 +154,4 @@ def get_transfer_service(
     :param elastic:
     :return:
     """
-    return TransferService(redis, elastic)
+    return BaseService(redis, elastic)

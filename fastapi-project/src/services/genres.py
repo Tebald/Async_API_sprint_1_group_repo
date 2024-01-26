@@ -6,10 +6,10 @@ from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 from models.genre import Genre
 from redis.asyncio import Redis
-from services.transfer import TransferService
+from services.transfer import BaseService
 
 
-class GenresService(TransferService):
+class GenresService(BaseService):
     """
     Class for buisness logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and

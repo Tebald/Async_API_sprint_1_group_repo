@@ -9,10 +9,10 @@ from models.film import Film
 from models.genre import Genre
 from models.person import Person
 from redis.asyncio import Redis
-from services.transfer import TransferService
+from services.transfer import BaseService
 
 
-class FilmsService(TransferService):
+class FilmsService(BaseService):
     """
     Class for buisness logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and
