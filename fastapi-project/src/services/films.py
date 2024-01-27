@@ -1,6 +1,7 @@
+import json
 import logging
 from functools import lru_cache
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -30,13 +31,21 @@ class FilmsService(BaseService):
             sort: str,
             page_size: int,
             page_number: int,
-            genre: Optional[str] = None) -> Optional[Tuple[List[Film], int]]:
+            genre: Optional[str] = None) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
+        cache_key = f"films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}"
+        cached_data = await self.redis.get(cache_key)
+        if cached_data:
+            res = [self.redis_model.parse_raw(item) for item in json.loads(cached_data)]
+            return res, len(res)
 
-        items = await self._get_items_from_elastic(sort, page_size, page_number, genre)
+        items, total = await self._get_items_from_elastic(sort, page_size, page_number, genre)
         if not items:
             return None
 
-        return items
+        await self.redis.set(cache_key, json.dumps([item.json() for item in items]), ex=self.CACHE_EXPIRE_IN_SECONDS)
+        print(items)
+
+        return items, total
 
     async def get_items_by_ids(self, ids: List[str]) -> Optional[List[Film]]:
         result = []
