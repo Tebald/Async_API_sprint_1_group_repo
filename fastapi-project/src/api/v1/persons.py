@@ -13,27 +13,6 @@ from services.persons import PersonsService, get_persons_service
 router = APIRouter()
 
 
-def get_films_ids(films: list) -> list:
-    """
-    Retuns list of uuids.
-    :param films: [
-        {
-          "id": "c20c249f-91ac-4c6a-9afe-f1c85aa9b277",
-          "roles": ["director"]
-        },
-        {
-          "id": "00af52ec-9345-4d66-adbe-50eb917f463a",
-          "roles": ["director", "writer"]
-        }
-    ]
-    :return:
-    """
-    result = []
-    for film in films:
-        result.append(film['id'])
-    return result
-
-
 @router.get(path='/search',
             response_model=Page[PersonSchema],
             summary="Search for a person",
