@@ -7,6 +7,7 @@ from redis.asyncio import Redis
 from db._redis import get_redis
 from db.elastic import get_elastic
 from models.genre import Genre
+from schemas import GenreSchema
 from services.transfer import BaseService
 
 
@@ -17,7 +18,8 @@ class GenresService(BaseService):
     send it to api modules.
     """
     index = 'genres'
-    model = Genre
+    elastic_model = Genre
+    redis_model = GenreSchema
 
 
 @lru_cache()

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from pydantic.types import UUID4
 
+from schemas import GenreSchema
 from services import GenresService, get_genres_service
 
 router = APIRouter()
@@ -19,8 +20,8 @@ class Genre(BaseModel):
     name: str
 
 
-@router.get('/', response_model=List[Genre])
-async def list_of_genres(genre_service: GenresService = Depends(get_genres_service)) -> list:
+@router.get('/', response_model=List[GenreSchema])
+async def list_of_genres(genre_service: GenresService = Depends(get_genres_service)):
     """
     Returns a list of all genres.
     :param genre_service:
@@ -30,13 +31,13 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
     if not genres:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of genres is empty')
 
-    return [Genre(uuid=genre.id, name=genre.name) for genre in genres]
+    return [GenreSchema(uuid=genre.uuid, name=genre.name) for genre in genres]
 
 
-@router.get('/{genre_id}', response_model=Genre)
-async def genre_details(uuid: str, genre_service: GenresService = Depends(get_genres_service)) -> Genre:
+@router.get('/{genre_id}', response_model=GenreSchema)
+async def genre_details(uuid: str, genre_service: GenresService = Depends(get_genres_service)):
     genre = await genre_service.get_by_id(uuid)
     if not genre:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='genre not found')
 
-    return Genre(uuid=genre.id, name=genre.name)
+    return GenreSchema(uuid=genre.uuid, name=genre.name)

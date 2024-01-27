@@ -46,7 +46,7 @@ class FilmsService(BaseService):
             return None
 
         for item in response['docs']:
-            data = self.model(**item['_source'])
+            data = self.elastic_model(**item['_source'])
             logging.debug(data)
             result.append(data)
 
@@ -71,9 +71,16 @@ class FilmsService(BaseService):
         body = {
             "query": {
                 "match_all": {}
-            } if not genre else {
-                    "match": {
-                        "genre": genre
+                } if not genre else {
+                    "nested": {
+                        "path": "genre",
+                        "query": {
+                        "bool": {
+                          "must": [
+                            { "match": { "genre.id": genre } }
+                          ]
+                        }
+                      }
                     }
                 },
             "sort": [
@@ -86,7 +93,7 @@ class FilmsService(BaseService):
             response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
             total = response['hits']['total']['value']
             for item in response['hits']['hits']:
-                data = self.model(**item['_source'])
+                data = self.elastic_model(**item['_source'])
                 result.append(data)
         except NotFoundError:
             return None

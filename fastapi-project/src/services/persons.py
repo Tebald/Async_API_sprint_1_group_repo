@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from db._redis import get_redis
 from db.elastic import get_elastic
 from models.person import Person
+from schemas import PersonSchema
 from services.transfer import BaseService
 
 
@@ -19,7 +20,8 @@ class PersonsService(BaseService):
     send it to api modules.
     """
     index = 'persons'
-    model = Person
+    elastic_model = Person
+    redis_model = PersonSchema
     search_field = "full_name"
 
 

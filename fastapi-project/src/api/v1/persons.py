@@ -2,18 +2,19 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 from pydantic import BaseModel
 
 from services import FilmsService, get_films_service
 from services.persons import PersonsService, get_persons_service
+from api.pagination import Page
 
-from .films import FilmShort
+from schemas.films import FilmShort
 
 router = APIRouter()
 
 
-class Person(BaseModel):
+class PersonSchema(BaseModel):
     """
     Response model for Person object.
     This class contains info we return to a user.
@@ -45,7 +46,7 @@ def get_films_ids(films: list) -> list:
 
 
 @router.get(path='/search',
-            response_model=Page[Person],
+            response_model=Page[PersonSchema],
             summary="Search for a person",
             description="Full-text person search",
             response_description="List of people")
@@ -62,19 +63,19 @@ async def search_persons(
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
 
-    res = [Person(uuid=person.id, full_name=person.full_name, films=person.films) for person in persons]
+    res = [PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films) for person in persons]
 
     return paginate(res)
 
 
 @router.get(path='/{person_id}',
-            response_model=Person,
+            response_model=PersonSchema,
             summary="Information about a person",
             description="Search a person by id",
             response_description="Name and filmography")
 async def person_details(
         person_id: str,
-        person_service: PersonsService = Depends(get_persons_service)) -> Person:
+        person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
     :param person_id:
@@ -85,7 +86,7 @@ async def person_details(
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
 
-    return Person(uuid=person.id, full_name=person.full_name, films=person.films)
+    return PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films)
 
 
 @router.get(path='/{person_id}/film',
@@ -115,4 +116,4 @@ async def person_films(
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='associated films not found')
 
-    return [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    return [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]

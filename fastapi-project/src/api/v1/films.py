@@ -2,12 +2,14 @@ from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import paginate
 from fastapi_pagination.api import resolve_params
 
 from schemas import FilmSchema, FilmShort
+from api.pagination import Page
 from services import (FilmsService, GenresService, get_films_service,
                       get_genres_service)
+
 
 router = APIRouter()
 
@@ -23,21 +25,16 @@ async def list_of_films(
         ),
         genre: Optional[str] = Query(None, description="Genre UUID for filtering"),
 ):
-
-    if genre:
-        genre_obj = await genre_service.get_by_id(genre)
-        genre_name = genre_obj.name if genre_obj is not None else 'null'
-    else:
-        genre_name = None
-
     params = resolve_params()
 
-    films, total = await film_service.get_all_items(sort=sort, genre=genre_name, page_number=params.page, page_size=params.size)
+    films, total = await film_service.get_all_items(
+        sort=sort, genre=genre, page_number=params.page, page_size=params.size
+    )
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
-    res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    res = [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]
     return Page.create(items=res, total=total, params=params)
 
 
@@ -69,5 +66,5 @@ async def search_films(
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
-    res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    res = [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]
     return paginate(res)
