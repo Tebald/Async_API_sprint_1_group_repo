@@ -4,12 +4,11 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import paginate
 
+from api.pagination import Page
 from schemas import PersonSchema
+from schemas.films import FilmShort
 from services import FilmsService, get_films_service
 from services.persons import PersonsService, get_persons_service
-from api.pagination import Page
-
-from schemas.films import FilmShort
 
 router = APIRouter()
 

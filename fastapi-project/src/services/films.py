@@ -1,5 +1,4 @@
 import json
-import logging
 from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
@@ -40,7 +39,10 @@ class FilmsService(BaseService):
 
         items, total = await self._get_items_from_elastic(sort, page_size, page_number, genre)
         if items:
-            await self.redis.set(cache_key, json.dumps([item.json() for item in items]), ex=self.CACHE_EXPIRE_IN_SECONDS)
+            await self.redis.set(
+                cache_key, json.dumps([item.json() for item in items]),
+                ex=self.CACHE_EXPIRE_IN_SECONDS
+            )
 
         return items, total
 

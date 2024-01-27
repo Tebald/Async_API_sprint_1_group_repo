@@ -7,7 +7,7 @@ from fastapi_pagination.api import resolve_params
 
 from api.pagination import Page
 from schemas import FilmSchema, FilmShort
-from services import (FilmsService, get_films_service)
+from services import FilmsService, get_films_service
 
 router = APIRouter()
 
