@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import paginate
-from pydantic import BaseModel
 
+from schemas import PersonSchema
 from services import FilmsService, get_films_service
 from services.persons import PersonsService, get_persons_service
 from api.pagination import Page
@@ -12,16 +12,6 @@ from api.pagination import Page
 from schemas.films import FilmShort
 
 router = APIRouter()
-
-
-class PersonSchema(BaseModel):
-    """
-    Response model for Person object.
-    This class contains info we return to a user.
-    """
-    uuid: str
-    full_name: str
-    films: list | None
 
 
 def get_films_ids(films: list) -> list:
