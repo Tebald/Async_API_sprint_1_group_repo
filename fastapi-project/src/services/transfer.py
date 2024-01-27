@@ -87,7 +87,7 @@ class BaseService:
         entity = await self._object_from_cache(object_id=object_id, index=self.index)
         if not entity:
             # If the entity is not in the cache, get it from Elasticsearch.
-            entity = await self._get_object_from_elastic(object_id=object_id, index=self.index)
+            entity = await self._get_object_from_elastic(object_id=object_id)
             if not entity:
                 # If the entity is not in the Elasticsearch.
                 return None
@@ -96,20 +96,19 @@ class BaseService:
 
         return entity
 
-    async def _get_object_from_elastic(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
+    async def _get_object_from_elastic(self, object_id: str) -> Optional[Film or Genre or Person]:
         """
         Returns an object if it exists in elastic.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
         :param index: 'movies'
         :return: Film
         """
-        model = BaseService.get_model(index)
         try:
-            doc = await self.elastic.get(index=index, id=object_id)
+            doc = await self.elastic.get(index=self.index, id=object_id)
         except NotFoundError:
             return None
         logging.info('Retrieved object info from elastic: %s', doc['_source'])
-        return model(**doc['_source'])
+        return self.model(**doc['_source'])
 
     async def _object_from_cache(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
         """
