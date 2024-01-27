@@ -10,7 +10,7 @@ from db._redis import get_redis
 from db.elastic import get_elastic
 from models import Person, Film, Genre
 from schemas.films import FilmSchema
-from services.transfer import BaseService
+from services.base import BaseService
 
 
 class FilmsService(BaseService):

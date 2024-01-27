@@ -8,7 +8,7 @@ from db._redis import get_redis
 from db.elastic import get_elastic
 from models.person import Person
 from schemas import PersonSchema
-from services.transfer import BaseService
+from services.base import BaseService
 
 
 class PersonsService(BaseService):
