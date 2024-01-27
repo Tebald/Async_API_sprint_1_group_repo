@@ -19,9 +19,9 @@ class FilmworkTransformer(BaseTransformer):
                 films[film_id] = {
                     "id": film_id,
                     "imdb_rating": detail["rating"],
-                    "genre": set(),
                     "title": detail["title"],
                     "description": detail["description"],
+                    "genre": [],
                     "actors_names": [],
                     "writers_names": [],
                     "directors_names": [],
@@ -32,7 +32,9 @@ class FilmworkTransformer(BaseTransformer):
             self._process_role(film_id, detail, films)
 
             if detail["genre_name"] is not None:
-                films[film_id]["genre"].add(detail["genre_name"])
+                genre = {'id': detail['genre_id'], 'name': detail['genre_name']}
+                if genre not in films[film_id]['genre']:
+                    films[film_id]['genre'].append(genre)
 
         for film in films.values():
             film["genre"] = list(film["genre"])

@@ -3,8 +3,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import Page, paginate
+
 from schemas import Film, FilmShort
-from services import FilmsService, GenresService, get_films_service, get_genres_service
+from services import (FilmsService, GenresService, get_films_service,
+                      get_genres_service)
 
 router = APIRouter()
 
@@ -13,13 +15,20 @@ router = APIRouter()
 async def list_of_films(
         film_service: FilmsService = Depends(get_films_service),
         genre_service: GenresService = Depends(get_genres_service),
-        sort: str = Query('-imdb_rating', description="Sort by field, prefix '-' for descending order", regex="^-?imdb_rating$"),
+        sort: str = Query(
+            '-imdb_rating',
+            description="Sort by field, prefix '-' for descending order",
+            regex="^-?imdb_rating$"
+        ),
         genre: Optional[str] = Query(None, description="Genre UUID for filtering")
 ):
-    genre_name = None
-    if genre is not None:
+
+    if genre:
         genre_obj = await genre_service.get_by_id(genre)
         genre_name = genre_obj.name if genre_obj is not None else 'null'
+    else:
+        genre_name = None
+
     films = await film_service.get_all_items(sort=sort, genre=genre_name)
 
     if not films:
