@@ -90,20 +90,13 @@ class BaseService:
         :return: [Film, Film_a, Film_b, ... Film_n]
         """
         result = []
-        scroll = '1m'
         try:
-            response = await self.elastic.search(index=self.index, body={"query": {"match_all": {}}}, scroll=scroll,
-                                                 size=100)
-            while response['hits']['hits']:
-                for item in response['hits']['hits']:
-                    data = self.elastic_model(**item['_source'])
-                    result.append(data)
-                response = await self.elastic.scroll(scroll_id=response['_scroll_id'], scroll=scroll)
+            response = await self.elastic.search(index=self.index, body={"query": {"match_all": {}}}, size=100)
+            for item in response['hits']['hits']:
+                data = self.elastic_model(**item['_source'])
+                result.append(data)
         except NotFoundError:
             return None
-
-        if '_scroll_id' in response:
-            await self.elastic.clear_scroll(scroll_id=response['_scroll_id'])
 
         return result
 
