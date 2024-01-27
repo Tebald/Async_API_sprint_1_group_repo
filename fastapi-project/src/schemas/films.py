@@ -1,6 +1,8 @@
 from pydantic.main import BaseModel
 from pydantic.types import UUID4
 
+from schemas.genre import GenreSchema
+
 
 class PersonForFilm(BaseModel):
     uuid: UUID4
@@ -15,7 +17,7 @@ class FilmSchema(BaseModel):
     uuid: UUID4
     title: str
     description: str | None
-    genre: list[str] | None
+    genre: list[GenreSchema] | None
     imdb_rating: float | None
     actors: list[PersonForFilm]
     writers: list[PersonForFilm]
