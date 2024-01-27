@@ -100,6 +100,7 @@ async def person_films(
         films_service: FilmsService = Depends(get_films_service)) -> List[FilmShort]:
     """
     Returns a list of films associated with a Person.
+    :param films_service:
     :param person_id:
     :param person_service:
     :return:

@@ -37,7 +37,7 @@ class BaseService:
 
         return items
 
-    async def search_items(self, search_query: str, **kwargs) -> Optional[List]:
+    async def search_items(self, search_query: str) -> Optional[List]:
         result = []
         body = {
             "query": {
@@ -64,7 +64,6 @@ class BaseService:
 
         return result
 
-
     async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
         """
         Retrieves all entries from elastic index.
@@ -89,11 +88,10 @@ class BaseService:
         Returns object Film/Person/Genre.
         It is optional since the object can be absent in the elastic/cache.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :param index: 'movies'
         :return: Film
         """
         # Trying to get the data from cache.
-        entity = await self._object_from_cache(object_id=object_id, index=self.index)
+        entity = await self._object_from_cache(object_id=object_id)
         if not entity:
             # If the entity is not in the cache, get it from Elasticsearch.
             entity = await self._get_object_from_elastic(object_id=object_id)
@@ -109,7 +107,6 @@ class BaseService:
         """
         Returns an object if it exists in elastic.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :param index: 'movies'
         :return: Film
         """
         try:
@@ -119,11 +116,10 @@ class BaseService:
         logging.info('Retrieved object info from elastic: %s', doc['_source'])
         return self.elastic_model(**doc['_source'])
 
-    async def _object_from_cache(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
+    async def _object_from_cache(self, object_id: str) -> Optional[Film or Genre or Person]:
         """
         Getting object info from cache using command get https://redis.io/commands/get/.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :param index: 'movies'
         :return: Film
         """
         data = await self.redis.get(object_id)

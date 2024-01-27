@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 
 from db._redis import get_redis
 from db.elastic import get_elastic
-from models import Person, Film, Genre
+from models import Film
 from schemas.films import FilmSchema
 from services.base import BaseService
 
@@ -30,7 +30,7 @@ class FilmsService(BaseService):
             sort: str,
             page_size: int,
             page_number: int,
-            genre: Optional[str] = None) -> Optional[List[Film]]:
+            genre: Optional[str] = None) -> Optional[Tuple[List[Film], int]]:
 
         items = await self._get_items_from_elastic(sort, page_size, page_number, genre)
         if not items:
@@ -51,12 +51,13 @@ class FilmsService(BaseService):
             result.append(data)
 
         return result
+
     async def _get_items_from_elastic(
             self,
             sort: str,
             page_size: int,
             page_number: int,
-            genre: Optional[str] = None) -> Optional[list[Film or Genre or Person]]:
+            genre: Optional[str] = None) -> Optional[Tuple[List[Film], int]]:
         """
         Retrieves all entries from elastic index.
         It is not recommended to use this method to retrieve large amount of rows.
@@ -71,18 +72,18 @@ class FilmsService(BaseService):
         body = {
             "query": {
                 "match_all": {}
-                } if not genre else {
-                    "nested": {
-                        "path": "genre",
-                        "query": {
+            } if not genre else {
+                "nested": {
+                    "path": "genre",
+                    "query": {
                         "bool": {
-                          "must": [
-                            { "match": { "genre.id": genre } }
-                          ]
+                            "must": [
+                                {"match": {"genre.id": genre}}
+                            ]
                         }
-                      }
                     }
-                },
+                }
+            },
             "sort": [
                 {sort_field: {"order": sort_order}}
             ]

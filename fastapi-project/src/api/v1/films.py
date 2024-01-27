@@ -5,11 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import paginate
 from fastapi_pagination.api import resolve_params
 
-from schemas import FilmSchema, FilmShort
 from api.pagination import Page
-from services import (FilmsService, GenresService, get_films_service,
-                      get_genres_service)
-
+from schemas import FilmSchema, FilmShort
+from services import (FilmsService, get_films_service)
 
 router = APIRouter()
 
@@ -17,7 +15,6 @@ router = APIRouter()
 @router.get('/', response_model=Page[FilmShort])
 async def list_of_films(
         film_service: FilmsService = Depends(get_films_service),
-        genre_service: GenresService = Depends(get_genres_service),
         sort: str = Query(
             '-imdb_rating',
             description="Sort by field, prefix '-' for descending order",
