@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Callable
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -19,27 +19,31 @@ class BaseService:
     It contains functions to take data from elastic or redis and
     send it to api modules.
     """
-    index = None
-    elastic_model = None
-    redis_model = None
-    search_field = None
-    fuzziness = "auto"
-    CACHE_EXPIRE_IN_SECONDS = 60 * 5
+    index: str
+    elastic_model: Callable[..., Union[Film, Genre, Person]]
+    redis_model: Callable[..., Union[Film, Genre, Person]]
+    search_field: str
+    fuzziness: str = "auto"
+    CACHE_EXPIRE_IN_SECONDS: int = 60 * 5
+    DEFAULT_SIZE = 100
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
         self.redis = redis
         self.elastic = elastic
 
     async def get_all_items(self, **kwargs) -> Optional[List]:
-        items = await self._get_items_from_elastic(**kwargs)
-        if not items:
-            return None
-
-        return items
+        return await self._get_items_from_elastic(**kwargs)
 
     async def search_items(self, search_query: str) -> Optional[List]:
-        result = []
-        body = {
+        body = self._build_search_body(search_query)
+        return await self._execute_elastic_search(body)
+
+    async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
+        body = {"query": {"match_all": {}}}
+        return await self._execute_elastic_search(body)
+
+    def _build_search_body(self, search_query: str) -> dict:
+        return {
             "query": {
                 "multi_match": {
                     "query": search_query,
@@ -48,40 +52,15 @@ class BaseService:
                     "fuzziness": self.fuzziness
                 }
             },
-            "sort": [
-                "_score"
-
-            ]
+            "sort": ["_score"]
         }
 
+    async def _execute_elastic_search(self, body: dict) -> Optional[List]:
         try:
-            response = await self.elastic.search(index=self.index, body=body, size=100)
-            for item in response['hits']['hits']:
-                data = self.elastic_model(**item['_source'])
-                result.append(data)
+            response = await self.elastic.search(index=self.index, body=body, size=self.DEFAULT_SIZE)
+            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']]
         except NotFoundError:
             return None
-
-        return result
-
-    async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
-        """
-        Retrieves all entries from elastic index.
-        It is not recommended to use this method to retrieve large amount of rows.
-        Maximum possible rows amount is 10k.
-        :param index: 'movies'
-        :return: [Film, Film_a, Film_b, ... Film_n]
-        """
-        result = []
-        try:
-            response = await self.elastic.search(index=self.index, body={"query": {"match_all": {}}}, size=100)
-            for item in response['hits']['hits']:
-                data = self.elastic_model(**item['_source'])
-                result.append(data)
-        except NotFoundError:
-            return None
-
-        return result
 
     async def get_by_id(self, object_id: str) -> Optional[Film or Genre or Person]:
         """
@@ -90,17 +69,11 @@ class BaseService:
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
         :return: Film
         """
-        # Trying to get the data from cache.
         entity = await self._object_from_cache(object_id=object_id)
         if not entity:
-            # If the entity is not in the cache, get it from Elasticsearch.
             entity = await self._get_object_from_elastic(object_id=object_id)
-            if not entity:
-                # If the entity is not in the Elasticsearch.
-                return None
-            # Save the data in cache.
-            await self._put_object_to_cache(entity)
-
+            if entity:
+                await self._put_object_to_cache(entity)
         return entity
 
     async def _get_object_from_elastic(self, object_id: str) -> Optional[Film or Genre or Person]:
@@ -111,10 +84,10 @@ class BaseService:
         """
         try:
             doc = await self.elastic.get(index=self.index, id=object_id)
+            logging.info('Retrieved object info from elastic: %s', doc['_source'])
+            return self.elastic_model(**doc['_source'])
         except NotFoundError:
             return None
-        logging.info('Retrieved object info from elastic: %s', doc['_source'])
-        return self.elastic_model(**doc['_source'])
 
     async def _object_from_cache(self, object_id: str) -> Optional[Film or Genre or Person]:
         """
@@ -125,8 +98,6 @@ class BaseService:
         data = await self.redis.get(object_id)
         if not data:
             return None
-
-        # pydantic предоставляет удобное API для создания объекта моделей из json
         object_data = self.redis_model.parse_raw(data)
         logging.info('Retrieved object info from cache: %s', object_data)
         return object_data

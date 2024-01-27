@@ -35,31 +35,21 @@ class FilmsService(BaseService):
         cache_key = f"films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}"
         cached_data = await self.redis.get(cache_key)
         if cached_data:
-            res = [self.redis_model.parse_raw(item) for item in json.loads(cached_data)]
-            return res, len(res)
+            items = [self.redis_model.parse_raw(item) for item in json.loads(cached_data)]
+            return items, len(items)
 
         items, total = await self._get_items_from_elastic(sort, page_size, page_number, genre)
-        if not items:
-            return None
-
-        await self.redis.set(cache_key, json.dumps([item.json() for item in items]), ex=self.CACHE_EXPIRE_IN_SECONDS)
-        print(items)
+        if items:
+            await self.redis.set(cache_key, json.dumps([item.json() for item in items]), ex=self.CACHE_EXPIRE_IN_SECONDS)
 
         return items, total
 
     async def get_items_by_ids(self, ids: List[str]) -> Optional[List[Film]]:
-        result = []
         try:
             response = await self.elastic.mget(index=self.index, body={'ids': ids})
+            return [self.elastic_model(**item['_source']) for item in response['docs']]
         except NotFoundError:
             return None
-
-        for item in response['docs']:
-            data = self.elastic_model(**item['_source'])
-            logging.debug(data)
-            result.append(data)
-
-        return result
 
     async def _get_items_from_elastic(
             self,
@@ -75,40 +65,24 @@ class FilmsService(BaseService):
         """
         sort_order = 'desc' if sort.startswith('-') else 'asc'
         sort_field = sort.lstrip('-')
-
         offset = (page_number - 1) * page_size
 
         body = {
-            "query": {
-                "match_all": {}
-            } if not genre else {
+            "query": {"match_all": {}} if not genre else {
                 "nested": {
                     "path": "genre",
-                    "query": {
-                        "bool": {
-                            "must": [
-                                {"match": {"genre.id": genre}}
-                            ]
-                        }
-                    }
+                    "query": {"bool": {"must": [{"match": {"genre.id": genre}}]}}
                 }
             },
-            "sort": [
-                {sort_field: {"order": sort_order}}
-            ]
+            "sort": [{sort_field: {"order": sort_order}}]
         }
 
-        result = []
         try:
             response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
             total = response['hits']['total']['value']
-            for item in response['hits']['hits']:
-                data = self.elastic_model(**item['_source'])
-                result.append(data)
+            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']], total
         except NotFoundError:
             return None
-
-        return result, total
 
 
 @lru_cache()
