@@ -17,7 +17,7 @@ class Film(BaseModel):
     Class to store data received from elastic.
     index: movies
     """
-    id: str
+    uuid: str = Field(alias='id')
     title: str
     description: str | None
     genre: list | None

@@ -7,7 +7,7 @@ class PersonForFilm(BaseModel):
     full_name: str
 
 
-class Film(BaseModel):
+class FilmSchema(BaseModel):
     """
     Response model for Film object.
     This class contains info we return to a user.

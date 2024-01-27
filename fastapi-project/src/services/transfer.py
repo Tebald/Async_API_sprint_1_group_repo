@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -20,7 +20,10 @@ class BaseService:
     send it to api modules.
     """
     index = None
-    model = None
+    elastic_model = None
+    redis_model = None
+    search_field = None
+    fuzziness = "auto"
     CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
@@ -50,6 +53,34 @@ class BaseService:
 
         return data_model
 
+    async def search_items(self, search_query: str, **kwargs) -> Optional[List]:
+        result = []
+        body = {
+            "query": {
+                "multi_match": {
+                    "query": search_query,
+                    "fields": [self.search_field],
+                    "type": "best_fields",
+                    "fuzziness": self.fuzziness
+                }
+            },
+            "sort": [
+                "_score"
+
+            ]
+        }
+
+        try:
+            response = await self.elastic.search(index=self.index, body=body, size=100)
+            for item in response['hits']['hits']:
+                data = self.elastic_model(**item['_source'])
+                result.append(data)
+        except NotFoundError:
+            return None
+
+        return result
+
+
     async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
         """
         Retrieves all entries from elastic index.
@@ -65,7 +96,7 @@ class BaseService:
                                                  size=100)
             while response['hits']['hits']:
                 for item in response['hits']['hits']:
-                    data = self.model(**item['_source'])
+                    data = self.elastic_model(**item['_source'])
                     result.append(data)
                 response = await self.elastic.scroll(scroll_id=response['_scroll_id'], scroll=scroll)
         except NotFoundError:
@@ -109,7 +140,7 @@ class BaseService:
         except NotFoundError:
             return None
         logging.info('Retrieved object info from elastic: %s', doc['_source'])
-        return self.model(**doc['_source'])
+        return self.elastic_model(**doc['_source'])
 
     async def _object_from_cache(self, object_id: str, index: str) -> Optional[Film or Genre or Person]:
         """
@@ -123,13 +154,12 @@ class BaseService:
         if not data:
             return None
 
-        model = BaseService.get_model(index)
         # pydantic предоставляет удобное API для создания объекта моделей из json
-        object_data = model.parse_raw(data)
+        object_data = self.redis_model.parse_raw(data)
         logging.info('Retrieved object info from cache: %s', object_data)
         return object_data
 
-    async def _put_object_to_cache(self, entity: Film):
+    async def _put_object_to_cache(self, entity: Union[Film, Genre, Person]):
         """
         Save object info using set https://redis.io/commands/set/.
         Pydantic allows to serialize model to json.
@@ -137,7 +167,7 @@ class BaseService:
         :return:
         """
 
-        await self.redis.set(entity.id, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
+        await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
 
 
 @lru_cache()

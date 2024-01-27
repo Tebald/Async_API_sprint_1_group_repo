@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 from typing import List, Optional
 
@@ -7,9 +8,8 @@ from redis.asyncio import Redis
 
 from db._redis import get_redis
 from db.elastic import get_elastic
-from models.film import Film
-from models.genre import Genre
-from models.person import Person
+from models import Person, Film, Genre
+from schemas.films import FilmSchema
 from services.transfer import BaseService
 
 
@@ -20,49 +20,42 @@ class FilmsService(BaseService):
     send it to api modules.
     """
     index = 'movies'
-    model = Film
+    elastic_model = Film
+    redis_model = FilmSchema
+    search_field = "title"
+    fuzziness = "0"
 
     async def get_all_items(
             self,
             sort: str,
+            page_size: int,
+            page_number: int,
             genre: Optional[str] = None) -> Optional[List[Film]]:
 
-        items = await self._get_items_from_elastic(sort, genre)
+        items = await self._get_items_from_elastic(sort, page_size, page_number, genre)
         if not items:
             return None
 
         return items
 
-    async def search_films(self, film_title: str) -> Optional[List[Film]]:
+    async def get_items_by_ids(self, ids: List[str]) -> Optional[List[Film]]:
         result = []
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": film_title,
-                    "fields": ["title"],
-                    "type": "best_fields",
-                    "fuzziness": "0"
-                }
-            },
-            "sort": [
-                "_score"
-
-            ]
-        }
-
         try:
-            response = await self.elastic.search(index=self.index, body=body, size=100)
-            for item in response['hits']['hits']:
-                data = self.model(**item['_source'])
-                result.append(data)
+            response = await self.elastic.mget(index=self.index, body={'ids': ids})
         except NotFoundError:
             return None
 
-        return result
+        for item in response['docs']:
+            data = self.model(**item['_source'])
+            logging.debug(data)
+            result.append(data)
 
+        return result
     async def _get_items_from_elastic(
             self,
             sort: str,
+            page_size: int,
+            page_number: int,
             genre: Optional[str] = None) -> Optional[list[Film or Genre or Person]]:
         """
         Retrieves all entries from elastic index.
@@ -72,6 +65,8 @@ class FilmsService(BaseService):
         """
         sort_order = 'desc' if sort.startswith('-') else 'asc'
         sort_field = sort.lstrip('-')
+
+        offset = (page_number - 1) * page_size
 
         body = {
             "query": {
@@ -87,22 +82,16 @@ class FilmsService(BaseService):
         }
 
         result = []
-        scroll = '1m'
         try:
-            response = await self.elastic.search(index=self.index, body=body, scroll=scroll,
-                                                 size=100)
-            while response['hits']['hits']:
-                for item in response['hits']['hits']:
-                    data = self.model(**item['_source'])
-                    result.append(data)
-                response = await self.elastic.scroll(scroll_id=response['_scroll_id'], scroll=scroll)
+            response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
+            total = response['hits']['total']['value']
+            for item in response['hits']['hits']:
+                data = self.model(**item['_source'])
+                result.append(data)
         except NotFoundError:
             return None
 
-        if '_scroll_id' in response:
-            await self.elastic.clear_scroll(scroll_id=response['_scroll_id'])
-
-        return result
+        return result, total
 
 
 @lru_cache()

@@ -3,8 +3,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import Page, paginate
+from fastapi_pagination.api import resolve_params
 
-from schemas import Film, FilmShort
+from schemas import FilmSchema, FilmShort
 from services import (FilmsService, GenresService, get_films_service,
                       get_genres_service)
 
@@ -20,7 +21,7 @@ async def list_of_films(
             description="Sort by field, prefix '-' for descending order",
             regex="^-?imdb_rating$"
         ),
-        genre: Optional[str] = Query(None, description="Genre UUID for filtering")
+        genre: Optional[str] = Query(None, description="Genre UUID for filtering"),
 ):
 
     if genre:
@@ -29,23 +30,25 @@ async def list_of_films(
     else:
         genre_name = None
 
-    films = await film_service.get_all_items(sort=sort, genre=genre_name)
+    params = resolve_params()
+
+    films, total = await film_service.get_all_items(sort=sort, genre=genre_name, page_number=params.page, page_size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
     res = [FilmShort(uuid=film.id, title=film.title, imdb_rating=film.imdb_rating) for film in films]
-    return paginate(res)
+    return Page.create(items=res, total=total, params=params)
 
 
-@router.get('/{film_id}', response_model=Film)
+@router.get('/{film_id}', response_model=FilmSchema)
 async def film_details(uuid: str, film_service: FilmsService = Depends(get_films_service)):
     film = await film_service.get_by_id(uuid)
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
 
-    return Film(
-        uuid=film.id,
+    return FilmSchema(
+        uuid=film.uuid,
         title=film.title,
         description=film.description,
         genre=film.genre,
@@ -61,7 +64,7 @@ async def search_films(
         film_service: FilmsService = Depends(get_films_service),
         query: Optional[str] = Query('', description="Film title for searching")
 ):
-    films = await film_service.search_films(query)
+    films = await film_service.search_items(query)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')

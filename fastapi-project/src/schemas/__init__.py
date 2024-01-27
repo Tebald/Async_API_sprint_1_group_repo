@@ -1,1 +1,1 @@
-from schemas.films import Film, FilmShort  # noqa
+from schemas.films import FilmSchema, FilmShort  # noqa

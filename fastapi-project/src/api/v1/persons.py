@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import Page, paginate
 from pydantic import BaseModel
 
+from services import FilmsService, get_films_service
 from services.persons import PersonsService, get_persons_service
 
 from .films import FilmShort
@@ -57,7 +58,7 @@ async def search_persons(
     :param query:
     :return:
     """
-    persons = await person_service.search_persons(query)
+    persons = await person_service.search_items(query)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
 
@@ -94,7 +95,8 @@ async def person_details(
             response_description="Name and imdb_rating of films")
 async def person_films(
         person_id: str,
-        person_service: PersonsService = Depends(get_persons_service)) -> List[FilmShort]:
+        person_service: PersonsService = Depends(get_persons_service),
+        films_service: FilmsService = Depends(get_films_service)) -> List[FilmShort]:
     """
     Returns a list of films associated with a Person.
     :param person_id:
@@ -106,17 +108,9 @@ async def person_films(
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
 
-    film_ids = get_films_ids(person.films)
+    film_ids = [film['id'] for film in person.films]
 
-    filter_body = {
-        'query': {
-            'bool': {
-                'must': {'match_all': {}},
-                'filter': {'ids': {'values': film_ids}}
-            }
-        }
-    }
-    films = await person_service.get_all_items(index='movies', filter_body=filter_body)
+    films = await films_service.get_items_by_ids(film_ids)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='associated films not found')
