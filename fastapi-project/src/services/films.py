@@ -23,7 +23,6 @@ class FilmsService(BaseService):
     elastic_model = Film
     redis_model = FilmSchema
     search_field = "title"
-    fuzziness = "0"
 
     async def get_all_items(
             self,

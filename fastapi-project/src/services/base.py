@@ -23,7 +23,6 @@ class BaseService:
     elastic_model: Callable[..., Union[Film, Genre, Person]]
     redis_model: Callable[..., Union[Film, Genre, Person]]
     search_field: str
-    fuzziness: str = "auto"
     CACHE_EXPIRE_IN_SECONDS: int = 60 * 5
     DEFAULT_SIZE = 100
 
@@ -49,7 +48,7 @@ class BaseService:
                     "query": search_query,
                     "fields": [self.search_field],
                     "type": "best_fields",
-                    "fuzziness": self.fuzziness
+                    "fuzziness": "auto"
                 }
             },
             "sort": ["_score"]
