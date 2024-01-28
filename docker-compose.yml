@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:1.19.2
+    # Mounting Nginx configs whthin a container.
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/confd:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
   elasticsearch:
     image: elasticsearch:8.6.2
     environment:
@@ -76,8 +87,6 @@ services:
     entrypoint: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
     expose:
       - ${API_PORT}
-    ports:
-      - "8000:${API_PORT}"
     environment:
       ES_HOST: ${ES_HOST}
       ES_PORT: ${ES_PORT}
