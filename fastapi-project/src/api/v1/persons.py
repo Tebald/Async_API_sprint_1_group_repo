@@ -23,9 +23,6 @@ async def search_persons(
         query: Optional[str] = Query('', description="Person's name for searching")):
     """
     Returns a list of persons depends on filter.
-    :param person_service:
-    :param query:
-    :return:
     """
     persons = await person_service.search_items(query)
     if not persons:
@@ -46,9 +43,6 @@ async def person_details(
         person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
-    :param person_id:
-    :param person_service:
-    :return:
     """
     person = await person_service.get_by_id(object_id=person_id)
     if not person:
@@ -68,10 +62,6 @@ async def person_films(
         films_service: FilmsService = Depends(get_films_service)) -> List[FilmShort]:
     """
     Returns a list of films associated with a Person.
-    :param films_service:
-    :param person_id:
-    :param person_service:
-    :return:
     """
     person = await person_service.get_by_id(object_id=person_id)
 

@@ -10,11 +10,11 @@ logging_config.dictConfig(LOGGING)
 PROJECT_NAME = os.getenv('PROJECT_NAME', 'Read-only API для онлайн-кинотеатра')
 
 # Настройки Redis
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 
 # Настройки Elasticsearch
-ES_HOST = os.getenv('ES_HOST', '127.0.0.1')
+ES_HOST = os.getenv('ES_HOST', 'elasticsearch')
 ES_PORT = int(os.getenv('ES_PORT', 9200))
 
 # Корень проекта

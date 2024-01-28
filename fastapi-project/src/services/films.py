@@ -1,4 +1,5 @@
 import json
+import logging
 from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
@@ -33,15 +34,20 @@ class FilmsService(BaseService):
         cache_key = f"films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}"
         cached_data = await self.redis.get(cache_key)
         if cached_data:
+            logging.info('Retrieved object from cache - %s', cache_key)
+
             items = [self.redis_model.parse_raw(item) for item in json.loads(cached_data)]
             return items, len(items)
 
         items, total = await self._get_items_from_elastic(sort, page_size, page_number, genre)
+        logging.info('Retrieved object from elastic - %s', cache_key)
+
         if items:
             await self.redis.set(
                 cache_key, json.dumps([item.json() for item in items]),
                 ex=self.CACHE_EXPIRE_IN_SECONDS
             )
+            logging.info('Saved object in cache - %s', cache_key)
 
         return items, total
 

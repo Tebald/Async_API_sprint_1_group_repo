@@ -108,7 +108,8 @@ class BaseService:
         :param entity: Film
         :return:
         """
-
+        logging.info('Saving object into cache: %s', entity.uuid)
+        logging.debug('Saving object into cache: %s : %s', entity.uuid, entity.json())
         await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
 
 
