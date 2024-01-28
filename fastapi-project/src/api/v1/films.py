@@ -27,7 +27,7 @@ async def list_of_films(
     if params.page * params.size > 10000:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail='Amount of entries > 10k is not supported. Please try to use filters.'
+            detail='Amount of entries > 10k is not supported. Please try to use api/v1/films/search endpoint.'
         )
 
     films, total = await film_service.get_all_items(

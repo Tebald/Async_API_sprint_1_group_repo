@@ -1,5 +1,4 @@
 import uvicorn
-from core import config
 from elasticsearch import AsyncElasticsearch
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
@@ -7,6 +6,7 @@ from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 
 from api.v1 import films, genres, persons
+from core import config
 from db import _redis, elastic
 
 app = FastAPI(
