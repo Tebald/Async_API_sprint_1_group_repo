@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.19.2
+    # Mounting Nginx configs whthin a container.
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/confd:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    environment:
+      ES_JAVA_OPTS: "-Xms1000m -Xmx1000m"
+      discovery.type: single-node
+      xpack.security.enabled: false
+      http.port: ${ES_PORT}
+    ports:
+      - "9200:${ES_PORT}"
+    expose:
+      - ${ES_PORT}
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://${ES_HOST}:${ES_PORT}/_cluster/health?wait_for_status=yellow&timeout=5s" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      PGPORT: ${PG_PORT}
+    expose:
+      - ${PG_PORT}
+    volumes:
+      - ./etl/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB} -p ${PG_PORT}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  create_es_indexes:
+    image: appropriate/curl
+    environment:
+      ES_HOST: ${ES_HOST}
+      ES_PORT: ${ES_PORT}
+    volumes:
+      - ./etl/etl_libs/index_jsons_dir:/index_jsons_dir
+      - ./etl/etl_libs/index_jsons_dir/create-indexes.sh:/entrypoint.sh
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  etl:
+    build: ./etl
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      create_es_indexes:
+        condition: service_completed_successfully
+
+  redis:
+    image: redis:7.2.4
+    volumes:
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    expose:
+      - ${REDIS_PORT}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
+  api:
+    build: ./fastapi-project
+    entrypoint: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
+    expose:
+      - ${API_PORT}
+    environment:
+      ES_HOST: ${ES_HOST}
+      ES_PORT: ${ES_PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      PROJECT_NAME: ${PROJECT_NAME}
+      API_PORT: ${API_PORT}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etl:
+        condition: service_started
+
+volumes:
+  pg_data:
+  es_data:
