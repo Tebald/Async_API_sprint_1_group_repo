@@ -1,5 +1,6 @@
 import orjson
 from pydantic import BaseModel
+from pydantic.fields import Field
 
 
 def orjson_dumps(v, *, default):
@@ -11,7 +12,7 @@ class Genre(BaseModel):
     Class to store data received from elastic.
     index: genres
     """
-    id: str
+    uuid: str = Field(alias='id')
     name: str
 
     class Config:

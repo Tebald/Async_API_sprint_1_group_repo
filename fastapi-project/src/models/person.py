@@ -1,5 +1,6 @@
 import orjson
 from pydantic import BaseModel
+from pydantic.fields import Field
 
 
 def orjson_dumps(v, *, default):
@@ -11,7 +12,7 @@ class Person(BaseModel):
     Class to store data received from elastic.
     index: persons
     """
-    id: str
+    uuid: str = Field(alias='id')
     full_name: str
     films: list | None
 

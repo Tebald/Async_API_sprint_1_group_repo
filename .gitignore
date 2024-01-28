@@ -134,3 +134,4 @@ dmypy.json
 # .idea
 .idea
 /.ruff_cache/
+/setup.cfg
