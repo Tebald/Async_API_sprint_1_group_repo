@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pydantic.fields import Field
 
-from models.genre import Genre
+from src.models.genre import Genre
 
 from .base_orjson import BaseOrjsonModel
 

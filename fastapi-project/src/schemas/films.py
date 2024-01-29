@@ -1,7 +1,7 @@
 from pydantic.main import BaseModel
 from pydantic.types import UUID4
 
-from schemas.genre import GenreSchema
+from src.schemas.genre import GenreSchema
 
 
 class PersonForFilm(BaseModel):

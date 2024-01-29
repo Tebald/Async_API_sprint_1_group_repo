@@ -3,8 +3,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from schemas import GenreSchema
-from services import GenresService, get_genres_service
+from src.schemas import GenreSchema
+from src.services import GenresService, get_genres_service
 
 router = APIRouter()
 
