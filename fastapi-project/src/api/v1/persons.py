@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import paginate
+from api.validators import check_params
 
 from api.pagination import Page
 from schemas import PersonSchema
@@ -24,13 +24,17 @@ async def search_persons(
     """
     Returns a list of persons depends on filter.
     """
-    persons = await person_service.search_items(query)
+    params = check_params()
+    persons, total = await person_service.search_items(
+        search_query=query,
+        page_number=params.page,
+        page_size=params.size)
     if not persons:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films) for person in persons]
 
-    return paginate(res)
+    return Page.create(items=res, total=total, params=params)
 
 
 @router.get(path='/{person_id}',
@@ -46,7 +50,7 @@ async def person_details(
     """
     person = await person_service.get_by_id(object_id=person_id)
     if not person:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     return PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films)
 
@@ -66,13 +70,13 @@ async def person_films(
     person = await person_service.get_by_id(object_id=person_id)
 
     if not person:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     film_ids = [film['id'] for film in person.films]
 
     films = await films_service.get_items_by_ids(film_ids)
 
     if not films:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='associated films not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     return [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]

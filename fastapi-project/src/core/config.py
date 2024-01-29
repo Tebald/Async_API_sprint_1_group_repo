@@ -3,19 +3,21 @@ from logging import config as logging_config
 
 from core.logger import LOGGING
 
+from .api_settings import settings
+
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
 
 # Название проекта. Используется в Swagger-документации
-PROJECT_NAME = os.getenv('PROJECT_NAME', 'Read-only API для онлайн-кинотеатра')
+PROJECT_NAME = settings.project_name
 
 # Настройки Redis
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_HOST = settings.redis_host
+REDIS_PORT = settings.redis_port
 
 # Настройки Elasticsearch
-ES_HOST = os.getenv('ES_HOST', 'elasticsearch')
-ES_PORT = int(os.getenv('ES_PORT', 9200))
+ES_HOST = settings.es_host
+ES_PORT = settings.es_port
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
