@@ -1,11 +1,4 @@
-from functools import lru_cache
-
 from pydantic import BaseSettings, Field
-
-
-@lru_cache
-def get_settings():
-    return Settings()
 
 
 class Settings(BaseSettings):
@@ -27,3 +20,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = '../../.env'
+
+
+settings = Settings()

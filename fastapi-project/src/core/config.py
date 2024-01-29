@@ -3,9 +3,7 @@ from logging import config as logging_config
 
 from core.logger import LOGGING
 
-from .api_settings import get_settings
-
-settings = get_settings()
+from .api_settings import settings
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)

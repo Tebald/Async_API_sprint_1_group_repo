@@ -1,6 +1,4 @@
-from .api_settings import get_settings
-
-settings = get_settings()
+from .api_settings import settings
 
 # В логгере настраивается логгирование uvicorn-сервера.
 
