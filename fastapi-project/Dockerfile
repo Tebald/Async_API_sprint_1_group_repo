@@ -9,3 +9,5 @@ RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
 COPY ./src /app
 COPY main.py /app
+EXPOSE 8000
+ENTRYPOINT [ "gunicorn", "main:app", "--worker-class", "uvicorn.workers.UvicornWorker ", "--bind", "0.0.0.0:8000" ]

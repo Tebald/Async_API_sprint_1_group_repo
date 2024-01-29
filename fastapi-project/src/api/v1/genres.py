@@ -18,7 +18,7 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
     """
     Returns a list of all genres.
     """
-    genres = await genre_service.get_all_items()
+    genres, total = await genre_service.get_all_items()
     if not genres:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of genres is empty')
 

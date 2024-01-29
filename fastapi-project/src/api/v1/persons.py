@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import paginate
+from fastapi_pagination.api import AbstractParams, resolve_params
 
 from api.pagination import Page
 from schemas import PersonSchema
@@ -11,6 +11,17 @@ from services import FilmsService, get_films_service
 from services.persons import PersonsService, get_persons_service
 
 router = APIRouter()
+
+
+def check_params() -> AbstractParams:
+    params = resolve_params()
+
+    if params.page * params.size > 10000:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Amount of entries > 10k is not supported.'
+        )
+    return params
 
 
 @router.get(path='/search',
@@ -24,13 +35,17 @@ async def search_persons(
     """
     Returns a list of persons depends on filter.
     """
-    persons = await person_service.search_items(query)
+    params = check_params()
+    persons, total = await person_service.search_items(
+        search_query=query,
+        page_number=params.page,
+        page_size=params.size)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
 
     res = [PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films) for person in persons]
 
-    return paginate(res)
+    return Page.create(items=res, total=total, params=params)
 
 
 @router.get(path='/{person_id}',

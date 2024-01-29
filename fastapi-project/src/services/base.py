@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
@@ -33,13 +33,13 @@ class BaseService:
     async def get_all_items(self, **kwargs) -> Optional[List]:
         return await self._get_items_from_elastic(**kwargs)
 
-    async def search_items(self, search_query: str) -> Optional[List]:
+    async def search_items(self, search_query: str, page_size: int, page_number: int) -> Optional[List]:
         body = self._build_search_body(search_query)
-        return await self._execute_elastic_search(body)
+        return await self._execute_elastic_search(body=body, page_size=page_size, page_number=page_number)
 
     async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
-        body = {"query": {"match_all": {}}}
-        return await self._execute_elastic_search(body)
+        body = {"query": {"match_all": {}}, "sort": ["_score"]}
+        return await self._execute_elastic_search(body=body, page_size=self.DEFAULT_SIZE, page_number=1)
 
     def _build_search_body(self, search_query: str) -> dict:
         return {
@@ -54,10 +54,16 @@ class BaseService:
             "sort": ["_score"]
         }
 
-    async def _execute_elastic_search(self, body: dict) -> Optional[List]:
+    async def _execute_elastic_search(
+            self, body: dict,
+            page_size: int,
+            page_number: int) -> Optional[Tuple[List[Film], int]]:
+
+        offset = (page_number - 1) * page_size
         try:
-            response = await self.elastic.search(index=self.index, body=body, size=self.DEFAULT_SIZE)
-            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']]
+            response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
+            total = response['hits']['total']['value']
+            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']], total
         except NotFoundError:
             return None
 
@@ -109,7 +115,6 @@ class BaseService:
         :return:
         """
         logging.info('Saving object into cache: %s', entity.uuid)
-        logging.debug('Saving object into cache: %s : %s', entity.uuid, entity.json())
         await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
 
 

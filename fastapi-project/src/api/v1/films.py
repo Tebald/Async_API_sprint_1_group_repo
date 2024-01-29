@@ -2,14 +2,24 @@ from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination import paginate
-from fastapi_pagination.api import resolve_params
+from fastapi_pagination.api import AbstractParams, resolve_params
 
 from api.pagination import Page
 from schemas import FilmSchema, FilmShort
 from services import FilmsService, get_films_service
 
 router = APIRouter()
+
+
+def check_params() -> AbstractParams:
+    params = resolve_params()
+
+    if params.page * params.size > 10000:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Amount of entries > 10k is not supported. Please try to use api/v1/films/search endpoint.'
+        )
+    return params
 
 
 @router.get('/', response_model=Page[FilmShort])
@@ -22,13 +32,7 @@ async def list_of_films(
         ),
         genre: Optional[str] = Query(None, description="Genre UUID for filtering"),
 ):
-    params = resolve_params()
-
-    if params.page * params.size > 10000:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Amount of entries > 10k is not supported. Please try to use api/v1/films/search endpoint.'
-        )
+    params = check_params()
 
     films, total = await film_service.get_all_items(
         sort=sort, genre=genre, page_number=params.page, page_size=params.size
@@ -64,10 +68,11 @@ async def search_films(
         film_service: FilmsService = Depends(get_films_service),
         query: Optional[str] = Query('', description="Film title for searching")
 ):
-    films = await film_service.search_items(query)
+    params = check_params()
+    films, total = await film_service.search_items(search_query=query, page_number=params.page, page_size=params.size)
 
     if not films:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='film not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Nothing found')
 
     res = [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]
-    return paginate(res)
+    return Page.create(items=res, total=total, params=params)

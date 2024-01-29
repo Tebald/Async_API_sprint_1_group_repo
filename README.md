@@ -10,3 +10,6 @@
 
 `fastapi-project/src/core/config.py` - импорт параметров пока оставлен как есть,
 не получается использовать pydantic-settings из-за конфликта версий.
+
+Сылка на приватный репозиторий с командной работой:
+https://github.com/Tebald/Async_API_sprint_1_group_repo

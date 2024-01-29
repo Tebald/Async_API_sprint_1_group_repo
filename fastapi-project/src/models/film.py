@@ -1,12 +1,9 @@
-import orjson
 from pydantic import BaseModel
 from pydantic.fields import Field
 
 from models.genre import Genre
 
-
-def orjson_dumps(v, *, default):
-    return orjson.dumps(v, default=default).decode()
+from .base_orjson import BaseOrjsonModel
 
 
 class PersonFromElastic(BaseModel):
@@ -14,7 +11,7 @@ class PersonFromElastic(BaseModel):
     full_name: str = Field(..., alias="name")
 
 
-class Film(BaseModel):
+class Film(BaseOrjsonModel):
     """
     Class to store data received from elastic.
     index: movies
@@ -27,7 +24,3 @@ class Film(BaseModel):
     actors: list[PersonFromElastic]
     writers: list[PersonFromElastic]
     directors: list[PersonFromElastic]
-
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps

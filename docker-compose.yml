@@ -19,8 +19,6 @@ services:
       discovery.type: single-node
       xpack.security.enabled: false
       http.port: ${ES_PORT}
-    ports:
-      - "9200:${ES_PORT}"
     expose:
       - ${ES_PORT}
     volumes:
@@ -84,9 +82,6 @@ services:
 
   api:
     build: ./fastapi-project
-    entrypoint: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
-    expose:
-      - ${API_PORT}
     environment:
       ES_HOST: ${ES_HOST}
       ES_PORT: ${ES_PORT}
