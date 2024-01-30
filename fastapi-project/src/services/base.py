@@ -38,7 +38,7 @@ class BaseService:
         return await self._execute_elastic_search(body=body, page_size=page_size, page_number=page_number)
 
     async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
-        body = {"query": {"match_all": {}}, "sort": ["_score"]}
+        body = {"query": {"match_all": {}}}
         return await self._execute_elastic_search(body=body, page_size=self.DEFAULT_SIZE, page_number=1)
 
     def _build_search_body(self, search_query: str) -> dict:

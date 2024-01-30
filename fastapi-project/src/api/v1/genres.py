@@ -19,10 +19,11 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
     """
     Returns a list of all genres.
     """
-    genres, total = await genre_service.get_all_items()
+    genres, _ = await genre_service.get_all_items()
     if not genres:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of genres is empty')
-    return [genre.dict() for genre in genres]
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
+
+    return [GenreSchema(uuid=genre.uuid, name=genre.name) for genre in genres]
 
 
 @router.get('/{genre_id}',
@@ -33,6 +34,6 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
 async def genre_details(uuid: UUID4, genre_service: GenresService = Depends(get_genres_service)):
     genre = await genre_service.get_by_id(str(uuid))
     if not genre:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='genre not found')
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     return GenreSchema.parse_obj(genre)

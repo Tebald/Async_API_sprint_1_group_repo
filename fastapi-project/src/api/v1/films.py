@@ -2,28 +2,19 @@ from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi_pagination.api import AbstractParams, resolve_params
 from pydantic import UUID4
 
+
 from src.api.pagination import Page
+from src.api.validators import check_params
 from src.schemas import FilmSchema, FilmShort
 from src.services import FilmsService, get_films_service
+
 
 router = APIRouter()
 
 
-def check_params() -> AbstractParams:
-    params = resolve_params()
-
-    if params.page * params.size > 10000:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail="Amount of entries > 10k is not supported. Please try to use api/v1/films/search endpoint.",
-        )
-    return params
-
-
-@router.get("/", response_model=Page[FilmShort])
+@router.get('/', response_model=Page[FilmShort])
 async def list_of_films(
     film_service: FilmsService = Depends(get_films_service),
     sort: str = Query(
@@ -40,7 +31,7 @@ async def list_of_films(
     )
 
     if not films:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="film not found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [FilmShort.parse_obj(film) for film in films]
     return Page.create(items=res, total=total, params=params)
@@ -50,7 +41,7 @@ async def list_of_films(
 async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
     film = await film_service.get_by_id(str(uuid))
     if not film:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="film not found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     return FilmSchema.parse_obj(film)
 
@@ -61,10 +52,12 @@ async def search_films(
     query: Optional[str] = Query("", description="Film title for searching"),
 ):
     params = check_params()
-    films, total = await film_service.search_items(search_query=query, page_number=params.page, page_size=params.size)
+    films, total = await film_service.search_items(
+        search_query=query, page_number=params.page, page_size=params.size)
 
     if not films:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Nothing found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
+
 
     res = [film.dict() for film in films]
     return Page.create(items=res, total=total, params=params)
