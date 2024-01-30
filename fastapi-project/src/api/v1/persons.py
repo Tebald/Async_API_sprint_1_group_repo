@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.api import AbstractParams, resolve_params
+from pydantic import UUID4
 
 from src.api.pagination import Page
 from src.schemas import PersonSchema
@@ -43,7 +44,7 @@ async def search_persons(
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='List of persons is empty')
 
-    res = [PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films) for person in persons]
+    res = [person.dict() for person in persons]
 
     return Page.create(items=res, total=total, params=params)
 
@@ -54,16 +55,16 @@ async def search_persons(
             description="Search a person by id",
             response_description="Name and filmography")
 async def person_details(
-        person_id: str,
+        uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
     """
-    person = await person_service.get_by_id(object_id=person_id)
+    person = await person_service.get_by_id(str(uuid))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
 
-    return PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films)
+    return PersonSchema.parse_obj(person)
 
 
 @router.get(path='/{person_id}/film',
@@ -72,13 +73,13 @@ async def person_details(
             description="Filmography",
             response_description="Name and imdb_rating of films")
 async def person_films(
-        person_id: str,
+        uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service),
-        films_service: FilmsService = Depends(get_films_service)) -> List[FilmShort]:
+        films_service: FilmsService = Depends(get_films_service)):
     """
     Returns a list of films associated with a Person.
     """
-    person = await person_service.get_by_id(object_id=person_id)
+    person = await person_service.get_by_id(str(uuid))
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
@@ -90,4 +91,4 @@ async def person_films(
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='associated films not found')
 
-    return [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    return [film.dict() for film in films]

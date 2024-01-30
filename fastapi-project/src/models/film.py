@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 from src.models.genre import Genre
-
 from .base_orjson import BaseOrjsonModel
 
 
@@ -16,7 +15,7 @@ class Film(BaseOrjsonModel):
     Class to store data received from elastic.
     index: movies
     """
-    uuid: str = Field(alias='id')
+    uuid: str = Field(..., alias='id')
     title: str
     description: str | None
     genre: list[Genre] | None

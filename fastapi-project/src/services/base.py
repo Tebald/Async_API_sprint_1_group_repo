@@ -18,6 +18,7 @@ class BaseService:
     It contains functions to take data from elastic or redis and
     send it to api modules.
     """
+
     index: str
     elastic_model: ElasticModel
     redis_model: Schema
@@ -47,22 +48,21 @@ class BaseService:
                     "query": search_query,
                     "fields": [self.search_field],
                     "type": "best_fields",
-                    "fuzziness": "auto"
+                    "fuzziness": "auto",
                 }
             },
-            "sort": ["_score"]
+            "sort": ["_score"],
         }
 
     async def _execute_elastic_search(
-            self, body: dict,
-            page_size: int,
-            page_number: int) -> Optional[Tuple[List[ElasticModel], int]]:
+        self, body: dict, page_size: int, page_number: int
+    ) -> Optional[Tuple[List[ElasticModel], int]]:
 
         offset = (page_number - 1) * page_size
         try:
             response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
-            total = response['hits']['total']['value']
-            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']], total
+            total = response["hits"]["total"]["value"]
+            return [self.elastic_model(**item["_source"]) for item in response["hits"]["hits"]], total
         except NotFoundError:
             return None
 
@@ -71,7 +71,7 @@ class BaseService:
         Returns object Film/Person/Genre.
         It is optional since the object can be absent in the elastic/cache.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :return: Film
+        :return: Film | Genre | Person
         """
         entity = await self._object_from_cache(object_id=object_id)
         if not entity:
@@ -84,12 +84,12 @@ class BaseService:
         """
         Returns an object if it exists in elastic.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :return: Film
+        :return: Film | Genre | Person
         """
         try:
             doc = await self.elastic.get(index=self.index, id=object_id)
-            logging.info('Retrieved object info from elastic: %s', doc['_source'])
-            return self.elastic_model(**doc['_source'])
+            logging.info("Retrieved object info from elastic: %s", doc["_source"])
+            return self.elastic_model(**doc["_source"])
         except NotFoundError:
             return None
 
@@ -97,30 +97,35 @@ class BaseService:
         """
         Getting object info from cache using command get https://redis.io/commands/get/.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :return: Film
+        :return: Film | Genre | Person
         """
         data = await self.redis.get(object_id)
         if not data:
             return None
         object_data = self.redis_model.parse_raw(data)
-        logging.info('Retrieved object info from cache: %s', object_data)
+        logging.info("Retrieved object info from cache: %s", object_data)
         return object_data
 
     async def _put_object_to_cache(self, entity: ElasticModel):
         """
         Save object info using set https://redis.io/commands/set/.
         Pydantic allows to serialize model to json.
-        :param entity: Film
+        :param entity: Film | Genre | Person
         :return:
         """
-        logging.info('Saving object into cache: %s', entity.uuid)
-        await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
+        try:
+            logging.info("Saving object into cache: %s", entity.uuid)
+            await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
+        except TypeError:
+            logging.error("Cannot cache object: %s to cache. Cannot convert uuid to string.", entity.__class__)
+        except AttributeError:
+            logging.error("Cannot cache object: %s. No attribute 'uuid'.", entity.__class__)
 
 
 @lru_cache()
 def get_transfer_service(
-        redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+    redis: Redis = Depends(get_redis),
+    elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> BaseService:
     """
     Provider of TransferService.
