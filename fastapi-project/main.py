@@ -5,9 +5,9 @@ from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 
-from api.v1 import films, genres, persons
-from core import config
-from db import _redis, elastic
+from src.api.v1 import films, genres, persons
+from src.core import config
+from src.db import _redis, elastic
 
 app = FastAPI(
     title=config.PROJECT_NAME,

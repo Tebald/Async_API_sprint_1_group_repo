@@ -8,5 +8,6 @@ class Genre(BaseOrjsonModel):
     Class to store data received from elastic.
     index: genres
     """
-    uuid: str = Field(alias='id')
+
+    uuid: str = Field(..., alias="id")
     name: str
