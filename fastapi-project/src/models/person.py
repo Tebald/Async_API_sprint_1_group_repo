@@ -9,6 +9,6 @@ class Person(BaseOrjsonModel):
     index: persons
     """
 
-    uuid: str = Field(..., alias="id")
+    uuid: str = Field(..., alias='id')
     full_name: str
     films: list | None

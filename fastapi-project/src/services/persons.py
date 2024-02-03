@@ -20,7 +20,7 @@ class PersonsService(BaseService):
     index = 'persons'
     elastic_model = Person
     redis_model = PersonSchema
-    search_field = "full_name"
+    search_field = 'full_name'
 
 
 @lru_cache()

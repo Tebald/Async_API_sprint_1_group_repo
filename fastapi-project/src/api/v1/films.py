@@ -18,11 +18,11 @@ router = APIRouter()
 async def list_of_films(
     film_service: FilmsService = Depends(get_films_service),
     sort: str = Query(
-        "-imdb_rating",
+        '-imdb_rating',
         description="Sort by field, prefix '-' for descending order",
-        regex="^-?imdb_rating$"
+        regex='^-?imdb_rating$'
     ),
-    genre: Optional[str] = Query(None, description="Genre UUID for filtering"),
+    genre: Optional[str] = Query(None, description='Genre UUID for filtering'),
 ):
     params = check_params()
 
@@ -37,7 +37,7 @@ async def list_of_films(
     return Page.create(items=res, total=total, params=params)
 
 
-@router.get("/{film_id}", response_model=FilmSchema)
+@router.get('/{film_id}', response_model=FilmSchema)
 async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
     film = await film_service.get_by_id(str(uuid))
     if not film:
@@ -46,10 +46,10 @@ async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_fil
     return FilmSchema.parse_obj(film)
 
 
-@router.get("/search/", response_model=Page[FilmShort])
+@router.get('/search/', response_model=Page[FilmShort])
 async def search_films(
     film_service: FilmsService = Depends(get_films_service),
-    query: Optional[str] = Query("", description="Film title for searching"),
+    query: Optional[str] = Query('', description='Film title for searching'),
 ):
     params = check_params()
     films, total = await film_service.search_items(

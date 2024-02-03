@@ -6,8 +6,8 @@ from .base_orjson import BaseOrjsonModel
 
 
 class PersonFromElastic(BaseModel):
-    uuid: str = Field(..., alias="id")
-    full_name: str = Field(..., alias="name")
+    uuid: str = Field(..., alias='id')
+    full_name: str = Field(..., alias='name')
 
 
 class Film(BaseOrjsonModel):

@@ -14,8 +14,8 @@ app = FastAPI(
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
-    description="Information regarding films, genres and people who took part in the films creation",
-    version="1.0.0"
+    description='Information regarding films, genres and people who took part in the films creation',
+    version='1.0.0'
 )
 
 
