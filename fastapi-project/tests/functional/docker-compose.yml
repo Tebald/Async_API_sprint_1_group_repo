@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  tests-func:
+    build:
+      context: ./fastapi-project
+      target: tests
+    depends_on:
+      nginx:
+        condition: service_started
+      api:
+        condition: service_started

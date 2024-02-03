@@ -27,3 +27,14 @@ WORKDIR /app
 COPY --from=builder /usr/local /usr/local
 
 ENTRYPOINT [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+
+FROM python:3.10-slim as tests
+
+WORKDIR /tests
+
+COPY --from=builder /usr/local /usr/local
+COPY ./tests /tests
+
+RUN pip install --no-cache-dir --upgrade -r /tests/functional/requirements.txt
+
+ENTRYPOINT [ "pytest", "-rP", "./functional/src" ]
