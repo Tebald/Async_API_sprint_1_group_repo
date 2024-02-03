@@ -16,9 +16,9 @@ router = APIRouter()
 
 @router.get(path='/search',
             response_model=Page[PersonSchema],
-            summary="Search for a person",
-            description="Full-text person search",
-            response_description="List of people")
+            summary='Search for a person',
+            description='Full-text person search',
+            response_description='List of people')
 async def search_persons(
         person_service: PersonsService = Depends(get_persons_service),
         query: Optional[str] = Query('', description="Person's name for searching")):
@@ -40,9 +40,9 @@ async def search_persons(
 
 @router.get(path='/{person_id}',
             response_model=PersonSchema,
-            summary="Information about a person",
-            description="Search a person by id",
-            response_description="Name and filmography")
+            summary='Information about a person',
+            description='Search a person by id',
+            response_description='Name and filmography')
 async def person_details(
         uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service)):
@@ -58,9 +58,9 @@ async def person_details(
 
 @router.get(path='/{person_id}/film',
             response_model=List[FilmShort],
-            summary="Filmography information",
-            description="Filmography",
-            response_description="Name and imdb_rating of films")
+            summary='Filmography information',
+            description='Filmography',
+            response_description='Name and imdb_rating of films')
 async def person_films(
         uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service),

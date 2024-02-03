@@ -23,7 +23,7 @@ class FilmsService(BaseService):
     index = 'movies'
     elastic_model = Film
     redis_model = FilmSchema
-    search_field = "title"
+    search_field = 'title'
 
     async def get_all_items(
             self,
@@ -31,7 +31,7 @@ class FilmsService(BaseService):
             page_size: int,
             page_number: int,
             genre: Optional[str] = None) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
-        cache_key = f"films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}"
+        cache_key = f'films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}'
         cached_data = await self.redis.get(cache_key)
         if cached_data:
             logging.info('Retrieved object from cache - %s', cache_key)
@@ -75,13 +75,13 @@ class FilmsService(BaseService):
         offset = (page_number - 1) * page_size
 
         body = {
-            "query": {"match_all": {}} if not genre else {
-                "nested": {
-                    "path": "genre",
-                    "query": {"bool": {"must": [{"match": {"genre.id": genre}}]}}
+            'query': {'match_all': {}} if not genre else {
+                'nested': {
+                    'path': 'genre',
+                    'query': {'bool': {'must': [{'match': {'genre.id': genre}}]}}
                 }
             },
-            "sort": [{sort_field: {"order": sort_order}}]
+            'sort': [{sort_field: {'order': sort_order}}]
         }
 
         try:

@@ -38,20 +38,20 @@ class BaseService:
         return await self._execute_elastic_search(body=body, page_size=page_size, page_number=page_number)
 
     async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
-        body = {"query": {"match_all": {}}}
+        body = {'query': {'match_all': {}}}
         return await self._execute_elastic_search(body=body, page_size=self.DEFAULT_SIZE, page_number=1)
 
     def _build_search_body(self, search_query: str) -> dict:
         return {
-            "query": {
-                "multi_match": {
-                    "query": search_query,
-                    "fields": [self.search_field],
-                    "type": "best_fields",
-                    "fuzziness": "auto",
+            'query': {
+                'multi_match': {
+                    'query': search_query,
+                    'fields': [self.search_field],
+                    'type': 'best_fields',
+                    'fuzziness': 'auto',
                 }
             },
-            "sort": ["_score"],
+            'sort': ['_score'],
         }
 
     async def _execute_elastic_search(
@@ -61,8 +61,8 @@ class BaseService:
         offset = (page_number - 1) * page_size
         try:
             response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
-            total = response["hits"]["total"]["value"]
-            return [self.elastic_model(**item["_source"]) for item in response["hits"]["hits"]], total
+            total = response['hits']['total']['value']
+            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']], total
         except NotFoundError:
             return None
 
@@ -88,8 +88,8 @@ class BaseService:
         """
         try:
             doc = await self.elastic.get(index=self.index, id=object_id)
-            logging.info("Retrieved object info from elastic: %s", doc["_source"])
-            return self.elastic_model(**doc["_source"])
+            logging.info('Retrieved object info from elastic: %s', doc['_source'])
+            return self.elastic_model(**doc['_source'])
         except NotFoundError:
             return None
 
@@ -103,7 +103,7 @@ class BaseService:
         if not data:
             return None
         object_data = self.redis_model.parse_raw(data)
-        logging.info("Retrieved object info from cache: %s", object_data)
+        logging.info('Retrieved object info from cache: %s', object_data)
         return object_data
 
     async def _put_object_to_cache(self, entity: ElasticModel):
@@ -114,10 +114,10 @@ class BaseService:
         :return:
         """
         try:
-            logging.info("Saving object into cache: %s", entity.uuid)
+            logging.info('Saving object into cache: %s', entity.uuid)
             await self.redis.set(entity.uuid, entity.json(), self.CACHE_EXPIRE_IN_SECONDS)
         except TypeError:
-            logging.error("Cannot cache object: %s to cache. Cannot convert uuid to string.", entity.__class__)
+            logging.error('Cannot cache object: %s to cache. Cannot convert uuid to string.', entity.__class__)
         except AttributeError:
             logging.error("Cannot cache object: %s. No attribute 'uuid'.", entity.__class__)
 

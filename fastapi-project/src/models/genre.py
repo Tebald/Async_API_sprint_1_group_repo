@@ -9,5 +9,5 @@ class Genre(BaseOrjsonModel):
     index: genres
     """
 
-    uuid: str = Field(..., alias="id")
+    uuid: str = Field(..., alias='id')
     name: str
