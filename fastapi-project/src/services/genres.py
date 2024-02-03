@@ -4,16 +4,16 @@ from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 from redis.asyncio import Redis
 
-from db._redis import get_redis
-from db.elastic import get_elastic
-from models.genre import Genre
-from schemas import GenreSchema
-from services.base import BaseService
+from src.db._redis import get_redis
+from src.db.elastic import get_elastic
+from src.models.genre import Genre
+from src.schemas import GenreSchema
+from src.services.base import BaseService
 
 
 class GenresService(BaseService):
     """
-    Class for buisness logic to operate with film/person/genre entities.
+    Class for business logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and
     send it to api modules.
     """
@@ -31,7 +31,7 @@ def get_genres_service(
     """
     Provider of TransferService.
     'Depends' declares that Redis and Elasticsearch are necessary.
-    lru_cache decorator makes the servis object in a single exemplar (singleton).
+    lru_cache decorator makes the service object in a single exemplar (singleton).
 
     :param redis:
     :param elastic:

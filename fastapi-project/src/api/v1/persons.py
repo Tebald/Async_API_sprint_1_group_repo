@@ -2,22 +2,23 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from api.validators import check_params
+from pydantic import UUID4
 
-from api.pagination import Page
-from schemas import PersonSchema
-from schemas.films import FilmShort
-from services import FilmsService, get_films_service
-from services.persons import PersonsService, get_persons_service
+from src.api.validators import check_params
+from src.api.pagination import Page
+from src.schemas import PersonSchema
+from src.schemas.films import FilmShort
+from src.services import FilmsService, get_films_service
+from src.services.persons import PersonsService, get_persons_service
 
 router = APIRouter()
 
 
 @router.get(path='/search',
             response_model=Page[PersonSchema],
-            summary="Search for a person",
-            description="Full-text person search",
-            response_description="List of people")
+            summary='Search for a person',
+            description='Full-text person search',
+            response_description='List of people')
 async def search_persons(
         person_service: PersonsService = Depends(get_persons_service),
         query: Optional[str] = Query('', description="Person's name for searching")):
@@ -32,42 +33,42 @@ async def search_persons(
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
-    res = [PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films) for person in persons]
+    res = [person.dict() for person in persons]
 
     return Page.create(items=res, total=total, params=params)
 
 
 @router.get(path='/{person_id}',
             response_model=PersonSchema,
-            summary="Information about a person",
-            description="Search a person by id",
-            response_description="Name and filmography")
+            summary='Information about a person',
+            description='Search a person by id',
+            response_description='Name and filmography')
 async def person_details(
-        person_id: str,
+        uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
     """
-    person = await person_service.get_by_id(object_id=person_id)
+    person = await person_service.get_by_id(str(uuid))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
-    return PersonSchema(uuid=person.uuid, full_name=person.full_name, films=person.films)
+    return PersonSchema.parse_obj(person)
 
 
 @router.get(path='/{person_id}/film',
             response_model=List[FilmShort],
-            summary="Filmography information",
-            description="Filmography",
-            response_description="Name and imdb_rating of films")
+            summary='Filmography information',
+            description='Filmography',
+            response_description='Name and imdb_rating of films')
 async def person_films(
-        person_id: str,
+        uuid: UUID4,
         person_service: PersonsService = Depends(get_persons_service),
-        films_service: FilmsService = Depends(get_films_service)) -> List[FilmShort]:
+        films_service: FilmsService = Depends(get_films_service)):
     """
     Returns a list of films associated with a Person.
     """
-    person = await person_service.get_by_id(object_id=person_id)
+    person = await person_service.get_by_id(str(uuid))
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
@@ -79,4 +80,4 @@ async def person_films(
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
-    return [FilmShort(uuid=film.uuid, title=film.title, imdb_rating=film.imdb_rating) for film in films]
+    return [film.dict() for film in films]

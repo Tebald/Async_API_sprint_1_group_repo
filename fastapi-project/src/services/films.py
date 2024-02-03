@@ -7,23 +7,23 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 from redis.asyncio import Redis
 
-from db._redis import get_redis
-from db.elastic import get_elastic
-from models import Film
-from schemas.films import FilmSchema
-from services.base import BaseService
+from src.db._redis import get_redis
+from src.db.elastic import get_elastic
+from src.models import Film
+from src.schemas.films import FilmSchema
+from src.services.base import BaseService
 
 
 class FilmsService(BaseService):
     """
-    Class for buisness logic to operate with film/person/genre entities.
+    Class for business logic to operate with film/person/genre entities.
     It contains functions to take data from elastic or redis and
     send it to api modules.
     """
     index = 'movies'
     elastic_model = Film
     redis_model = FilmSchema
-    search_field = "title"
+    search_field = 'title'
 
     async def get_all_items(
             self,
@@ -31,7 +31,7 @@ class FilmsService(BaseService):
             page_size: int,
             page_number: int,
             genre: Optional[str] = None) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
-        cache_key = f"films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}"
+        cache_key = f'films_page_{page_number}_size_{page_size}_sort_{sort}_genre_{genre}'
         cached_data = await self.redis.get(cache_key)
         if cached_data:
             logging.info('Retrieved object from cache - %s', cache_key)
@@ -75,13 +75,13 @@ class FilmsService(BaseService):
         offset = (page_number - 1) * page_size
 
         body = {
-            "query": {"match_all": {}} if not genre else {
-                "nested": {
-                    "path": "genre",
-                    "query": {"bool": {"must": [{"match": {"genre.id": genre}}]}}
+            'query': {'match_all': {}} if not genre else {
+                'nested': {
+                    'path': 'genre',
+                    'query': {'bool': {'must': [{'match': {'genre.id': genre}}]}}
                 }
             },
-            "sort": [{sort_field: {"order": sort_order}}]
+            'sort': [{sort_field: {'order': sort_order}}]
         }
 
         try:
@@ -100,7 +100,7 @@ def get_films_service(
     """
     Provider of TransferService.
     'Depends' declares that Redis and Elasticsearch are necessary.
-    lru_cache decorator makes the servis object in a single exemplar (singleton).
+    lru_cache decorator makes the service object in a single exemplar (singleton).
 
     :param redis:
     :param elastic:
