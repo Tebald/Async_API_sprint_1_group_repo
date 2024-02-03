@@ -1,0 +1,10 @@
+services:
+  api:
+    build:
+      context: ./fastapi-project
+      target: dev
+      args:
+        EXPOSED_PORT: ${API_PORT}
+    volumes:
+      - ./fastapi-project/src:/app/src
+      - ./fastapi-project/main.py:/app/main.py

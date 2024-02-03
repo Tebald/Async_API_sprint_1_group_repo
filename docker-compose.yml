@@ -81,7 +81,11 @@ services:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
   api:
-    build: ./fastapi-project
+    build:
+      context: ./fastapi-project
+      target: prod
+      args:
+        EXPOSED_PORT: ${API_PORT}
     environment:
       ES_HOST: ${ES_HOST}
       ES_PORT: ${ES_PORT}

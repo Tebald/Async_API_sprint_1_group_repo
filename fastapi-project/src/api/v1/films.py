@@ -3,13 +3,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
-
-
 from src.api.pagination import Page
 from src.api.validators import check_params
 from src.schemas import FilmSchema, FilmShort
 from src.services import FilmsService, get_films_service
-
 
 router = APIRouter()
 
@@ -57,7 +54,6 @@ async def search_films(
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
-
 
     res = [film.dict() for film in films]
     return Page.create(items=res, total=total, params=params)
