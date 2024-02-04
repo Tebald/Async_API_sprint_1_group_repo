@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
@@ -14,22 +14,25 @@ from src.services.persons import PersonsService, get_persons_service
 router = APIRouter()
 
 
-@router.get(path='/search',
-            response_model=Page[PersonSchema],
-            summary='Search for a person',
-            description='Full-text person search',
-            response_description='List of people')
+@router.get(
+    path='/search',
+    response_model=Page[PersonSchema],
+    summary='Search for a person',
+    description='Full-text person search',
+    response_description='List of people',
+)
 async def search_persons(
-        person_service: PersonsService = Depends(get_persons_service),
-        query: Optional[str] = Query('', description="Person's name for searching")):
+    query: Annotated[str, Query('', description="Person's name for searching", min_length=1)],
+    person_service: PersonsService = Depends(get_persons_service),
+):
     """
     Returns a list of persons depends on filter.
     """
+    search_field = 'full_name'
     params = check_params()
     persons, total = await person_service.get_many(
-        search_query=query,
-        page_number=params.page,
-        size=params.size)
+        search_field=search_field, search_query=query, page_number=params.page, size=params.size
+    )
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -38,14 +41,14 @@ async def search_persons(
     return Page.create(items=res, total=total, params=params)
 
 
-@router.get(path='/{person_id}',
-            response_model=PersonSchema,
-            summary='Information about a person',
-            description='Search a person by id',
-            response_description='Name and filmography')
-async def person_details(
-        uuid: UUID4,
-        person_service: PersonsService = Depends(get_persons_service)):
+@router.get(
+    path='/{person_id}',
+    response_model=PersonSchema,
+    summary='Information about a person',
+    description='Search a person by id',
+    response_description='Name and filmography',
+)
+async def person_details(uuid: UUID4, person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
     """
@@ -56,15 +59,18 @@ async def person_details(
     return PersonSchema.parse_obj(person)
 
 
-@router.get(path='/{person_id}/film',
-            response_model=List[FilmShort],
-            summary='Filmography information',
-            description='Filmography',
-            response_description='Name and imdb_rating of films')
+@router.get(
+    path='/{person_id}/film',
+    response_model=List[FilmShort],
+    summary='Filmography information',
+    description='Filmography',
+    response_description='Name and imdb_rating of films',
+)
 async def person_films(
-        uuid: UUID4,
-        person_service: PersonsService = Depends(get_persons_service),
-        films_service: FilmsService = Depends(get_films_service)):
+    uuid: UUID4,
+    person_service: PersonsService = Depends(get_persons_service),
+    films_service: FilmsService = Depends(get_films_service),
+):
     """
     Returns a list of films associated with a Person.
     """

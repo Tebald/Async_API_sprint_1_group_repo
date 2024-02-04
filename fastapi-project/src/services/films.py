@@ -20,7 +20,6 @@ class FilmsService(BaseService):
     index = 'movies'
     elastic_model = Film
     redis_model = FilmSchema
-    search_field = 'title'
 
     async def get_many(self, **kwargs) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
         """

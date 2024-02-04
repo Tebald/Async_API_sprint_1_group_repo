@@ -42,7 +42,7 @@ LOGGING = {
         },
         'uvicorn.access': {
             'handlers': ['access'],
-            'level': settings.unicorn_acess_log_lvl,
+            'level': settings.unicorn_access_log_lvl,
             'propagate': False,
         },
     },

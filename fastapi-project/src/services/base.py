@@ -19,7 +19,6 @@ class BaseService:
     index: str
     elastic_model: ElasticModel
     redis_model: Schema
-    search_field: str
     DEFAULT_SIZE = 100
 
     def __init__(self, redis_service: RedisService, elastic_service: ElasticService):
@@ -49,7 +48,7 @@ class BaseService:
         if kwargs.get('page_number'):
             kwargs['from_'] = (kwargs.pop('page_number') - 1) * kwargs.get('size')
         if kwargs.get('search_query'):
-            kwargs['body'] = self._build_search_body(kwargs.pop('search_query'))
+            kwargs['body'] = self._build_search_body(kwargs.pop('search_field'), kwargs.pop('search_query'))
         if not kwargs.get('size'):
             kwargs['size'] = self.DEFAULT_SIZE
 
@@ -61,12 +60,12 @@ class BaseService:
     async def get_by_ids(self, object_ids: list[str]):
         return await self.elastic_service.mget(index=self.index, model=self.elastic_model, object_ids=object_ids)
 
-    def _build_search_body(self, search_query: str) -> dict:
+    def _build_search_body(self, search_field: str, search_query: str) -> dict:
         return {
             'query': {
                 'multi_match': {
                     'query': search_query,
-                    'fields': [self.search_field],
+                    'fields': [search_field],
                     'type': 'best_fields',
                     'fuzziness': 'auto',
                 }

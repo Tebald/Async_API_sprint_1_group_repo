@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Optional
+from typing import Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
@@ -16,17 +16,13 @@ router = APIRouter()
 async def list_of_films(
     film_service: FilmsService = Depends(get_films_service),
     sort: str = Query(
-        '-imdb_rating',
-        description="Sort by field, prefix '-' for descending order",
-        regex='^-?imdb_rating$'
+        '-imdb_rating', description="Sort by field, prefix '-' for descending order", regex='^-?imdb_rating$'
     ),
     genre: Optional[str] = Query(None, description='Genre UUID for filtering'),
 ):
     params = check_params()
 
-    films, total = await film_service.get_all(
-        sort=sort, genre=genre, page_number=params.page, size=params.size
-    )
+    films, total = await film_service.get_many(sort=sort, genre=genre, page_number=params.page, size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
@@ -46,11 +42,14 @@ async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_fil
 
 @router.get('/search/', response_model=Page[FilmShort])
 async def search_films(
+    query: Annotated[str, Query('', description='Film title for searching', min_length=1)],
     film_service: FilmsService = Depends(get_films_service),
-    query: Optional[str] = Query('', description='Film title for searching'),
 ):
+    search_field = 'title'
     params = check_params()
-    films, total = await film_service.get_all(search_query=query, page_number=params.page, size=params.size)
+    films, total = await film_service.get_many(
+        search_query=query, search_field=search_field, page_number=params.page, size=params.size
+    )
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
