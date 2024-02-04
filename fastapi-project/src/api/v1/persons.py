@@ -30,15 +30,14 @@ async def search_persons(
     """
     search_field = 'full_name'
     params = check_params()
-    persons, total = await person_service.get_many(
+    persons = await person_service.get_many(
         search_field=search_field, search_query=query, page_number=params.page, size=params.size
     )
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [person.dict() for person in persons]
-
-    return Page.create(items=res, total=total, params=params)
+    return Page.create(items=res, total=person_service.index_total_records, params=params)
 
 
 @router.get(

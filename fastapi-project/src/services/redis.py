@@ -12,6 +12,10 @@ from src.schemas import Schema
 
 
 class RedisService:
+    """
+    A class to combine all the Redis operations in the one place.
+    Stores functions to get/put data in and out of cache.
+    """
     CACHE_EXPIRE_IN_SECONDS: int = 60 * 5
 
     def __init__(self, redis: Redis):
@@ -19,27 +23,31 @@ class RedisService:
 
     async def get(self, object_id: str, model: type[Schema]) -> Optional[Schema]:
         """
-        Getting object info from cache using command get https://redis.io/commands/get/.
-        :param model:
+        Get object from cache using command get https://redis.io/commands/get/.
+        :param model: Model to parse.
         :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :return: Film | Genre | Person
+        :return: FilmSchema | GenreSchema | PersonSchema
         """
         data = await self.redis.get(object_id)
         if not data:
             return None
+
         object_data = model.parse_raw(data)
         logging.info('Retrieved object from cache: %s', object_id)
         return object_data
 
-    async def get_many(self, record_key: str, model: Schema) -> Optional[tuple[list[Schema], int]]:
+    async def get_many(self, record_key: str, model: Schema) -> Optional[list[Schema]]:
+        """
+        Get multiple objects from cache using command get https://redis.io/commands/get/.
+        :param record_key: A string record key, containing the record.
+        :param model: A model, used for parsing objects.
+        :return: A list of Schema.
+        """
         data = await self.redis.get(record_key)
-
         if not data:
             return None
 
-        loaded_tuple = orjson.loads(data)
-        result = [model(**film) for film in loaded_tuple[0]], loaded_tuple[1]
-
+        result = [model(**film) for film in orjson.loads(data)]
         logging.info('Retrieved objects from cache: key=%s', record_key)
         return result
 
@@ -47,7 +55,7 @@ class RedisService:
         """
         Save object info using set https://redis.io/commands/set/.
         Pydantic allows to serialize model to json.
-        :param entity: Film | Genre | Person
+        :param entity: FilmSchema | GenreSchema | PersonSchema
         :return:
         """
         try:
@@ -58,8 +66,14 @@ class RedisService:
         except AttributeError:
             logging.error("Cannot cache object: %s. No attribute 'uuid'.", entity.__class__)
 
-    async def put_many(self, record_key: str, entity: tuple[list[Schema], int]):
-        value_str = orjson.dumps(entity, default=pydantic_encoder)
+    async def put_many(self, record_key: str, entities: list[Schema]):
+        """
+        Save multiple objects to cache using set https://redis.io/commands/set/.
+        :param record_key: A string key to store record.
+        :param entities: A list of objects to store.
+        :return: -
+        """
+        value_str = orjson.dumps(entities, default=pydantic_encoder)
         await self.redis.set(record_key, value_str, self.CACHE_EXPIRE_IN_SECONDS)
         logging.info('Saved object into cache: key=%s', record_key)
 

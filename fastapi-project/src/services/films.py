@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import List, Optional, Tuple, Union
 
 from fastapi import Depends
 
@@ -21,25 +20,38 @@ class FilmsService(BaseService):
     elastic_model = Film
     redis_model = FilmSchema
 
-    async def get_many(self, **kwargs) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
+    def _process_kwargs(self, kwargs: dict):
         """
-        Retrieves all entries from elastic index.
-        It is not recommended to use this method to retrieve large amount of rows.
-        Maximum possible rows amount is 10k.
-        :return: [Film, Film_a, Film_b, ... Film_n]
+        Override kwargs processing from BaseService and adds its own.
+        kwargs will be added to `.search()` function of ElasticService.
+
+        Added kwargs has default value If they are not being provided.
         """
+        kwargs = super()._process_kwargs(kwargs)
         kwargs['body'] = {
             'query': self._process_genre_filter(kwargs.pop('genre', None)),
             'sort': self._process_sort(kwargs.pop('sort', '-_score')),
         }
-        return await super().get_many(**kwargs)
+        return kwargs
 
     @staticmethod
-    def _process_sort(sort: str):
+    def _process_sort(sort: str) -> dict[str, str]:
+        """
+        Creates a sort param for _process_kwargs.
+        Converts `+/-param` to {'param': 'asc'|'desc'}
+        """
         return {sort.lstrip('-'): 'desc' if sort.startswith('-') else 'asc'}
 
     @staticmethod
-    def _process_genre_filter(genre: str | None):
+    def _process_genre_filter(genre: str | None) -> dict:
+        """
+        Creates a nested filter param for _process_kwargs.
+        Filter passes only films with the same genre as {genre}.
+        If genre not specified, every film will pass. ('match_all')
+
+        :param genre: filter param.
+        :return: dict for `body` of request for Elasticsearch.
+        """
         if genre:
             return {'nested': {'path': 'genre', 'query': {'bool': {'must': [{'match': {'genre.id': genre}}]}}}}
         return {'match_all': {}}

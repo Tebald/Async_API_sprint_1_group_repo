@@ -10,25 +10,35 @@ from src.models import ElasticModel
 
 
 class ElasticService:
+    """
+    A class to combine all the Elasticsearch functions in the one place.
+    It contains all functions, used to fetch data from Elasticsearch.
+    """
     def __init__(self, elastic: AsyncElasticsearch):
         self.elastic = elastic
 
-    async def search(self, index: str, model: type[ElasticModel], **kwargs) -> Optional[tuple[list[ElasticModel], int]]:
+    async def search(self, index: str, model: type[ElasticModel], **kwargs) -> Optional[list[ElasticModel]]:
         """Process search query to ElasticSearch.
 
-        :return: Tuple with two values. (List of fetched objects parsed in Models, Integer total count of records in ES)
+        :param index: A ElasticSearch index to fetch.
+        :param model: A destination model to parse.
+        :param kwargs: Other optional keyword arguments.
+
+        Available all the kwargs from official documentation:
+        https://elasticsearch-py.readthedocs.io/en/7.9.1/
+
+        :return: List of fetched objects parsed in Models or None.
         """
         try:
             response = await self.elastic.search(index=index, **kwargs)
         except NotFoundError:
             return None
-        total = response['hits']['total']['value']
-        result = [model(**item['_source']) for item in response['hits']['hits']], total
-        logging.info('Retrieved objects from elasticsearch: count=(%s)', len(result[0]))
+        result = [model(**item['_source']) for item in response['hits']['hits']]
+        logging.info('Retrieved objects from elasticsearch: count=(%s)', len(result))
         return result
 
     async def get(self, index: str, model: type[ElasticModel], object_id: str) -> Optional[ElasticModel]:
-        """Process get query to ElasticSearch.
+        """Process `get` query to ElasticSearch.
 
         Returns an object if it exists in elastic.
         :param model:
@@ -45,6 +55,14 @@ class ElasticService:
             return None
 
     async def mget(self, index: str, model: type[ElasticModel], object_ids: list[str]) -> Optional[list[ElasticModel]]:
+        """Process `mget` query to Elasticsearch.
+
+        Gets list of API objects by ids.
+        :param index: index to fetch.
+        :param model: destination model to parse.
+        :param object_ids: list of objects ids.
+        :return: List of API objects.
+        """
         try:
             response = await self.elastic.mget(index=index, body={'ids': object_ids})
             result = [model(**item['_source']) for item in response['docs']]
@@ -52,6 +70,16 @@ class ElasticService:
             return result
         except NotFoundError:
             return None
+
+    async def count(self, index: str) -> int:
+        """Process `count` query to Elasticsearch.
+
+        Gets count of records in specified index.
+        :param index: A name of the index.
+        :return: Integer, representing count.
+        """
+        count = await self.elastic.count(index=index)
+        return count.get('count')
 
 
 @lru_cache()

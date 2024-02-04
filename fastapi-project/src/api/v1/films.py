@@ -22,13 +22,13 @@ async def list_of_films(
 ):
     params = check_params()
 
-    films, total = await film_service.get_many(sort=sort, genre=genre, page_number=params.page, size=params.size)
+    films = await film_service.get_many(sort=sort, genre=genre, page_number=params.page, size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [FilmShort.parse_obj(film) for film in films]
-    return Page.create(items=res, total=total, params=params)
+    return Page.create(items=res, total=film_service.index_total_records, params=params)
 
 
 @router.get('/{film_id}', response_model=FilmSchema)
@@ -47,7 +47,7 @@ async def search_films(
 ):
     search_field = 'title'
     params = check_params()
-    films, total = await film_service.get_many(
+    films = await film_service.get_many(
         search_query=query, search_field=search_field, page_number=params.page, size=params.size
     )
 
@@ -55,4 +55,4 @@ async def search_films(
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [film.dict() for film in films]
-    return Page.create(items=res, total=total, params=params)
+    return Page.create(items=res, total=film_service.index_total_records, params=params)
