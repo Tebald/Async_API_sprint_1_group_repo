@@ -4,8 +4,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
 
-from src.api.validators import check_params
 from src.api.pagination import Page
+from src.api.validators import check_params
 from src.schemas import PersonSchema
 from src.schemas.films import FilmShort
 from src.services import FilmsService, get_films_service
@@ -26,7 +26,7 @@ async def search_persons(
     Returns a list of persons depends on filter.
     """
     params = check_params()
-    persons, total = await person_service.get_all(
+    persons, total = await person_service.get_many(
         search_query=query,
         page_number=params.page,
         size=params.size)

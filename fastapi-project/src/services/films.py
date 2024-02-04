@@ -2,13 +2,12 @@ from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
 from fastapi import Depends
-from redis.asyncio import Redis
 
-from src.db._redis import get_redis
 from src.models import Film
 from src.schemas.films import FilmSchema
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
+from src.services.redis import RedisService, get_redis_service
 
 
 class FilmsService(BaseService):
@@ -23,7 +22,7 @@ class FilmsService(BaseService):
     redis_model = FilmSchema
     search_field = 'title'
 
-    async def get_all(self, **kwargs) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
+    async def get_many(self, **kwargs) -> Optional[Tuple[List[Union[Film, FilmSchema]], int]]:
         """
         Retrieves all entries from elastic index.
         It is not recommended to use this method to retrieve large amount of rows.
@@ -32,10 +31,9 @@ class FilmsService(BaseService):
         """
         kwargs['body'] = {
             'query': self._process_genre_filter(kwargs.pop('genre', None)),
-            'sort': self._process_sort(kwargs.pop('sort', '-_score'))
+            'sort': self._process_sort(kwargs.pop('sort', '-_score')),
         }
-
-        return await super().get_all(**kwargs)
+        return await super().get_many(**kwargs)
 
     @staticmethod
     def _process_sort(sort: str):
@@ -50,7 +48,7 @@ class FilmsService(BaseService):
 
 @lru_cache()
 def get_films_service(
-    redis: Redis = Depends(get_redis),
+    redis_service: RedisService = Depends(get_redis_service),
     elastic_service: ElasticService = Depends(get_elastic_service),
 ) -> FilmsService:
     """
@@ -58,8 +56,8 @@ def get_films_service(
     'Depends' declares that Redis and Elasticsearch are necessary.
     lru_cache decorator makes the service object in a single exemplar (singleton).
 
-    :param redis:
+    :param redis_service:
     :param elastic_service:
     :return:
     """
-    return FilmsService(redis, elastic_service)
+    return FilmsService(redis_service, elastic_service)

@@ -1,13 +1,12 @@
 from functools import lru_cache
 
 from fastapi import Depends
-from redis.asyncio import Redis
 
-from src.db._redis import get_redis
 from src.models.person import Person
 from src.schemas import PersonSchema
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
+from src.services.redis import RedisService, get_redis_service
 
 
 class PersonsService(BaseService):
@@ -25,7 +24,7 @@ class PersonsService(BaseService):
 
 @lru_cache()
 def get_persons_service(
-    redis: Redis = Depends(get_redis),
+    redis_service: RedisService = Depends(get_redis_service),
     elastic_service: ElasticService = Depends(get_elastic_service),
 ) -> PersonsService:
     """
@@ -33,8 +32,8 @@ def get_persons_service(
     'Depends' declares that Redis and Elasticsearch are necessary.
     lru_cache decorator makes the service object in a single exemplar (singleton).
 
-    :param redis:
+    :param redis_service:
     :param elastic_service:
     :return:
     """
-    return PersonsService(redis, elastic_service)
+    return PersonsService(redis_service, elastic_service)

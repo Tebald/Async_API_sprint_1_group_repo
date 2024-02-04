@@ -19,7 +19,7 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
     """
     Returns a list of all genres.
     """
-    genres, _ = await genre_service.get_all()
+    genres, _ = await genre_service.get_many()
     if not genres:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 

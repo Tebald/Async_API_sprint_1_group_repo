@@ -1,14 +1,10 @@
 from .api_settings import settings
 
-# В логгере настраивается логгирование uvicorn-сервера.
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': settings.log_format
-        },
+        'verbose': {'format': settings.log_format},
         'default': {
             '()': 'uvicorn.logging.DefaultFormatter',
             'fmt': '%(levelprefix)s %(message)s',
@@ -16,7 +12,7 @@ LOGGING = {
         },
         'access': {
             '()': 'uvicorn.logging.AccessFormatter',
-            'fmt': "%(levelprefix)s %(client_addr)s - '%(request_line)s' %(status_code)s",
+            'fmt': "%(asctime)s - uvicorn - %(client_addr)s - %(levelname)s - '%(request_line)s' %(status_code)s",
         },
     },
     'handlers': {
