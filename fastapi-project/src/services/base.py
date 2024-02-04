@@ -1,15 +1,14 @@
 import logging
 from functools import lru_cache
-from typing import List, Optional, Tuple
+from typing import Optional
 
-from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 from redis.asyncio import Redis
 
 from src.db._redis import get_redis
-from src.db.elastic import get_elastic
 from src.models import ElasticModel
 from src.schemas import Schema
+from src.services.elastic import ElasticService, get_elastic_service
 
 
 class BaseService:
@@ -20,53 +19,25 @@ class BaseService:
     """
 
     index: str
-    elastic_model: ElasticModel
     redis_model: Schema
     search_field: str
     CACHE_EXPIRE_IN_SECONDS: int = 60 * 5
     DEFAULT_SIZE = 100
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
+    def __init__(self, redis: Redis, elastic_service: ElasticService):
         self.redis = redis
-        self.elastic = elastic
+        self.elastic_service: ElasticService = elastic_service
 
-    async def get_all_items(self, **kwargs) -> Optional[List]:
-        return await self._get_items_from_elastic(**kwargs)
+    async def get_all(self, **kwargs) -> Optional[list[ElasticModel]]:
+        if kwargs.get('page_number'):
+            kwargs['from_'] = (kwargs.pop('page_number') - 1) * kwargs.get('size')
+        if kwargs.get('search_query'):
+            kwargs['body'] = self._build_search_body(kwargs.pop('search_query'))
+        if not kwargs.get('size'):
+            kwargs['size'] = self.DEFAULT_SIZE
+        return await self.elastic_service.search(index=self.index, **kwargs)
 
-    async def search_items(self, search_query: str, page_size: int, page_number: int) -> Optional[List]:
-        body = self._build_search_body(search_query)
-        return await self._execute_elastic_search(body=body, page_size=page_size, page_number=page_number)
-
-    async def _get_items_from_elastic(self, **kwargs) -> Optional[List]:
-        body = {'query': {'match_all': {}}}
-        return await self._execute_elastic_search(body=body, page_size=self.DEFAULT_SIZE, page_number=1)
-
-    def _build_search_body(self, search_query: str) -> dict:
-        return {
-            'query': {
-                'multi_match': {
-                    'query': search_query,
-                    'fields': [self.search_field],
-                    'type': 'best_fields',
-                    'fuzziness': 'auto',
-                }
-            },
-            'sort': ['_score'],
-        }
-
-    async def _execute_elastic_search(
-        self, body: dict, page_size: int, page_number: int
-    ) -> Optional[Tuple[List[ElasticModel], int]]:
-
-        offset = (page_number - 1) * page_size
-        try:
-            response = await self.elastic.search(index=self.index, body=body, size=page_size, from_=offset)
-            total = response['hits']['total']['value']
-            return [self.elastic_model(**item['_source']) for item in response['hits']['hits']], total
-        except NotFoundError:
-            return None
-
-    async def get_by_id(self, object_id: str) -> Optional[ElasticModel]:
+    async def get_one(self, object_id: str) -> Optional[ElasticModel]:
         """
         Returns object Film/Person/Genre.
         It is optional since the object can be absent in the elastic/cache.
@@ -75,23 +46,13 @@ class BaseService:
         """
         entity = await self._object_from_cache(object_id=object_id)
         if not entity:
-            entity = await self._get_object_from_elastic(object_id=object_id)
+            entity = await self.elastic_service.get(index=self.index, object_id=object_id)
             if entity:
                 await self._put_object_to_cache(entity)
         return entity
 
-    async def _get_object_from_elastic(self, object_id: str) -> Optional[ElasticModel]:
-        """
-        Returns an object if it exists in elastic.
-        :param object_id: '00af52ec-9345-4d66-adbe-50eb917f463a'
-        :return: Film | Genre | Person
-        """
-        try:
-            doc = await self.elastic.get(index=self.index, id=object_id)
-            logging.info('Retrieved object info from elastic: %s', doc['_source'])
-            return self.elastic_model(**doc['_source'])
-        except NotFoundError:
-            return None
+    async def get_by_ids(self, object_ids: list[str]):
+        return await self.elastic_service.mget(index=self.index, object_ids=object_ids)
 
     async def _object_from_cache(self, object_id: str) -> Optional[ElasticModel]:
         """
@@ -121,11 +82,24 @@ class BaseService:
         except AttributeError:
             logging.error("Cannot cache object: %s. No attribute 'uuid'.", entity.__class__)
 
+    def _build_search_body(self, search_query: str) -> dict:
+        return {
+            'query': {
+                'multi_match': {
+                    'query': search_query,
+                    'fields': [self.search_field],
+                    'type': 'best_fields',
+                    'fuzziness': 'auto',
+                }
+            },
+            'sort': ['_score'],
+        }
+
 
 @lru_cache()
 def get_transfer_service(
     redis: Redis = Depends(get_redis),
-    elastic: AsyncElasticsearch = Depends(get_elastic),
+    elastic_service: ElasticService = Depends(get_elastic_service),
 ) -> BaseService:
     """
     Provider of TransferService.
@@ -136,4 +110,4 @@ def get_transfer_service(
     :param elastic:
     :return:
     """
-    return BaseService(redis, elastic)
+    return BaseService(redis, elastic_service)

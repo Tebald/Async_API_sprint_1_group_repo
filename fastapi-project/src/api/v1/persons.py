@@ -26,10 +26,10 @@ async def search_persons(
     Returns a list of persons depends on filter.
     """
     params = check_params()
-    persons, total = await person_service.search_items(
+    persons, total = await person_service.get_all(
         search_query=query,
         page_number=params.page,
-        page_size=params.size)
+        size=params.size)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -49,7 +49,7 @@ async def person_details(
     """
     Returns info regarding a Person, found by person_id.
     """
-    person = await person_service.get_by_id(str(uuid))
+    person = await person_service.get_one(str(uuid))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -68,14 +68,14 @@ async def person_films(
     """
     Returns a list of films associated with a Person.
     """
-    person = await person_service.get_by_id(str(uuid))
+    person = await person_service.get_one(str(uuid))
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     film_ids = [film['id'] for film in person.films]
 
-    films = await films_service.get_items_by_ids(film_ids)
+    films = await films_service.get_by_ids(film_ids)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')

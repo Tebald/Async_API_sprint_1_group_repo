@@ -4,12 +4,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
 
-
 from src.api.pagination import Page
 from src.api.validators import check_params
 from src.schemas import FilmSchema, FilmShort
 from src.services import FilmsService, get_films_service
-
 
 router = APIRouter()
 
@@ -26,8 +24,8 @@ async def list_of_films(
 ):
     params = check_params()
 
-    films, total = await film_service.get_all_items(
-        sort=sort, genre=genre, page_number=params.page, page_size=params.size
+    films, total = await film_service.get_all(
+        sort=sort, genre=genre, page_number=params.page, size=params.size
     )
 
     if not films:
@@ -39,7 +37,7 @@ async def list_of_films(
 
 @router.get('/{film_id}', response_model=FilmSchema)
 async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
-    film = await film_service.get_by_id(str(uuid))
+    film = await film_service.get_one(str(uuid))
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -52,12 +50,10 @@ async def search_films(
     query: Optional[str] = Query('', description='Film title for searching'),
 ):
     params = check_params()
-    films, total = await film_service.search_items(
-        search_query=query, page_number=params.page, page_size=params.size)
+    films, total = await film_service.get_all(search_query=query, page_number=params.page, size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
-
 
     res = [film.dict() for film in films]
     return Page.create(items=res, total=total, params=params)
