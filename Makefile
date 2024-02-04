@@ -14,18 +14,10 @@ dev-up:
 dev-down:
 	@docker compose -f docker-compose.yml -f docker-compose.dev.yml down api nginx
 
-.PHONY: tests-func-up
-tests-func-up:
-	@docker compose -f docker-compose.yml -f fastapi-project/tests/functional/docker-compose.yml up --build tests-func
+.PHONY: tests-up
+tests-up:
+	@docker compose -f docker-compose.yml -f fastapi-project/tests/functional/docker-compose.yml up --build tests
 
-.PHONY: tests-func-down
-tests-func-down:
-	@docker compose -f docker-compose.yml -f fastapi-project/tests/functional/docker-compose.yml down tests-func
-
-.PHONY: tests-dev-up
-tests-dev-up:
-	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build tests-dev
-
-.PHONY: tests-dev-down
-tests-dev-down:
-	@docker compose -f docker-compose.yml -f docker-compose.dev.yml down tests-dev
+.PHONY: tests-down
+tests-down:
+	@docker compose -f docker-compose.yml -f fastapi-project/tests/functional/docker-compose.yml down tests

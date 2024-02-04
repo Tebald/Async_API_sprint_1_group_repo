@@ -84,8 +84,8 @@ services:
     build:
       context: ./fastapi-project
       target: prod
-      args:
-        EXPOSED_PORT: ${API_PORT}
+    expose:
+      - ${API_PORT}
     environment:
       ES_HOST: ${ES_HOST}
       ES_PORT: ${ES_PORT}

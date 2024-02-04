@@ -3,18 +3,6 @@ services:
     build:
       context: ./fastapi-project
       target: dev
-      args:
-        EXPOSED_PORT: ${API_PORT}
     volumes:
       - ./fastapi-project/src:/app/src
       - ./fastapi-project/main.py:/app/main.py
-
-  tests-dev:
-    build:
-      context: ./fastapi-project
-      target: tests
-    depends_on:
-      nginx:
-        condition: service_started
-      api:
-        condition: service_started
