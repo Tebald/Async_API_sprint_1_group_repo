@@ -1,0 +1,8 @@
+services:
+  api:
+    build:
+      context: ./fastapi-project
+      target: dev
+    volumes:
+      - ./fastapi-project/src:/app/src
+      - ./fastapi-project/main.py:/app/main.py
