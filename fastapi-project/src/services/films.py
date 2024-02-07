@@ -27,11 +27,12 @@ class FilmsService(BaseService):
 
         Added kwargs has default value If they are not being provided.
         """
-        kwargs = super()._process_kwargs(kwargs)
         kwargs['body'] = {
             'query': self._process_genre_filter(kwargs.pop('genre', None)),
             'sort': self._process_sort(kwargs.pop('sort', '-_score')),
         }
+        kwargs = super()._process_kwargs(kwargs)
+
         return kwargs
 
     @staticmethod
