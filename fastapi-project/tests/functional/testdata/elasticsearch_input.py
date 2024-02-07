@@ -3,17 +3,19 @@ import uuid
 
 import pytest_asyncio
 
+from tests.functional.utils.generate import generate_film_data
 
-@pytest_asyncio.fixture(name='es_films_search_data')
-def es_films_search_data():
+
+@pytest_asyncio.fixture(name='es_single_film')
+def es_single_film():
 
     async def inner():
         """
         Finction to prepare data for testing '/api/v1/films/search/' endpoint.
         :return:
         """
-        es_data = [{
-            'id': str(uuid.uuid4()),
+        es_data = {
+            'id': '95b7ddb4-1f59-4a2f-982d-65d733934b53',
             'imdb_rating': 8.5,
             'genre': [
                 {'id': '812e88bd-7db1-4827-967e-53c946a602b3', 'name': 'Action'},
@@ -35,13 +37,35 @@ def es_films_search_data():
                 {'id': 'caf76c67-c0fe-477e-8766-3ab3ff2574b5', 'name': 'Ben'},
                 {'id': 'b45bd7bc-2e16-46d5-b125-983d356768c6', 'name': 'Howard'}
             ],
-        } for _ in range(60)]
+        }
 
-        bulk_query: list[dict] = []
-        for row in es_data:
-            data = {'_index': 'movies', '_id': row['id']}
-            data.update({'_source': row})
-            bulk_query.append(data)
+        query: list[dict] = []
+        data = {'_index': 'movies', '_id': es_data['id']}
+        data.update({'_source': es_data})
+        query.append(data)
+
+        return query
+
+    return inner
+
+
+@pytest_asyncio.fixture(name='es_films_search_data')
+def es_films_search_data():
+
+    async def inner():
+        """
+        Finction to prepare data for testing '/api/v1/films/search/' endpoint.
+        :return:
+        """
+        action_genre = {'id': '812e88bd-7db1-4827-967e-53c946a602b3', 'name': 'Action'}
+        sci_fi_genre = {'id': 'b0585c47-e74a-4154-97f3-343fcb8b34d7', 'name': 'Sci-Fi'}
+
+        action_films = generate_film_data(action_genre['id'], action_genre['name'], 'Action', 30)
+        sci_fi_films = generate_film_data(sci_fi_genre['id'], sci_fi_genre['name'], 'Sci-Fi', 30)
+
+        es_data = action_films + sci_fi_films
+
+        bulk_query = [{'_index': 'movies', '_id': film['id'], '_source': film} for film in es_data]
 
         return bulk_query
 
