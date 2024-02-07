@@ -20,8 +20,15 @@ async def list_of_films(
     ),
     genre: Optional[str] = Query(None, description='Genre UUID for filtering'),
 ):
+    """
+    Return a list of films.
+    Available options:
+    - Sort by rating.
+    - Filter by genre uuid.
+    - Results pagination.
+    """
     params = check_params()
-    filter_ = {'field': 'genre.id', 'value': genre, 'type': 'must'}
+    filter_ = {'field': 'genre.id', 'value': genre} if genre else None
     films, total = await film_service.get_many(sort=sort, filters=[filter_], page_number=params.page, size=params.size)
 
     if not films:
@@ -31,7 +38,7 @@ async def list_of_films(
     return Page.create(items=res, total=total, params=params)
 
 
-@router.get('/{film_id}', response_model=FilmSchema)
+@router.get('/{film_id}', response_model=FilmSchema, description='Return details about film by UUID')
 async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
     film = await film_service.get_by_id(str(uuid))
     if not film:
@@ -45,6 +52,12 @@ async def search_films(
     query: Annotated[str, Query('', description='Film title for searching', min_length=1)],
     film_service: FilmsService = Depends(get_films_service),
 ):
+    """
+    Return a list of films with the most relevant title.
+    Available options:
+    - Search by film title.
+    - Results pagination.
+    """
     search = {'field': 'title', 'value': query}
     params = check_params()
     films, total = await film_service.get_many(

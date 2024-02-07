@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import List, Optional, Annotated
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
@@ -26,7 +26,10 @@ async def search_persons(
     person_service: PersonsService = Depends(get_persons_service),
 ):
     """
-    Returns a list of persons depends on filter.
+    Search person by full_name.
+
+    Available options:
+    - Search by full_name.
     """
     search = {'field': 'full_name', 'value': query}
     params = check_params()

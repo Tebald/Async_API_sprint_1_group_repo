@@ -20,6 +20,7 @@ class GenresService(BaseService):
     index = 'genres'
     elastic_model = Genre
     redis_model = GenreSchema
+    DEFAULT_SIZE = 1000
 
 
 @lru_cache()

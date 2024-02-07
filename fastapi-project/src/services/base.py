@@ -20,6 +20,7 @@ class BaseService:
     index: str
     elastic_model: ElasticModel
     redis_model: Schema
+    DEFAULT_SIZE = 100
 
     def __init__(
         self, redis_service: RedisService, elastic_service: ElasticService, kwargs_transformer: KwargsTransformer
@@ -37,10 +38,11 @@ class BaseService:
         """
 
         entity = await self.redis_service.get(object_id=object_id, model=self.redis_model)
-        if not entity:
-            entity = await self.elastic_service.get(index=self.index, model=self.elastic_model, object_id=object_id)
-            if entity:
-                await self.redis_service.put(entity=entity)
+        if entity:
+            return entity
+        entity = await self.elastic_service.get(index=self.index, model=self.elastic_model, object_id=object_id)
+        if entity:
+            await self.redis_service.put(entity=entity)
         return entity
 
     async def get_many(self, **kwargs) -> Optional[tuple[list[ElasticModel], int]]:
@@ -59,6 +61,8 @@ class BaseService:
         :param kwargs:
         :return: [Film1, Film2, Film3], 3
         """
+        if not kwargs.get('size'):
+            kwargs['size'] = self.DEFAULT_SIZE
         record_key = self.__class__.__name__ + str(kwargs)
         kwargs = self.kwargs_transformer.transform(kwargs)
 

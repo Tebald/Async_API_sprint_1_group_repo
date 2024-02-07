@@ -17,7 +17,7 @@ router = APIRouter()
             response_description='List of genres')
 async def list_of_genres(genre_service: GenresService = Depends(get_genres_service)):
     """
-    Returns a list of all genres.
+    Return a list of all genres.
     """
     genres, _ = await genre_service.get_many()
     if not genres:
@@ -32,6 +32,9 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
             description='Search a genre by id',
             response_description='UUID and name')
 async def genre_details(uuid: UUID4, genre_service: GenresService = Depends(get_genres_service)):
+    """
+    Return info about genre by uuid.
+    """
     genre = await genre_service.get_by_id(str(uuid))
     if not genre:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')

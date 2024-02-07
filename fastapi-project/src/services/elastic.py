@@ -11,7 +11,7 @@ from src.models import ElasticModel
 
 class ElasticService:
     """
-    A class to combine all the Elasticsearch functions in the one place.
+    A class to combine all the Elasticsearch functions in one place.
     It contains all functions, used to fetch data from Elasticsearch.
     """
     def __init__(self, elastic: AsyncElasticsearch):
