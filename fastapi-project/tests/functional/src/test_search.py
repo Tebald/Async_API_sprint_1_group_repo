@@ -1,4 +1,5 @@
 import pytest
+
 from tests.functional.conftest import es_write_data, api_make_get_request
 from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_persons_search_data
 from tests.functional.settings import movies_test_settings, persons_test_settings
@@ -105,7 +106,7 @@ async def test_persons_search(
         api_make_get_request,
         query_data: dict,
         expected_answer: dict):
-    print(movies_test_settings.es_host)
+
     es_data = await es_persons_search_data()
 
     await es_write_data(data=es_data, settings=persons_test_settings)
