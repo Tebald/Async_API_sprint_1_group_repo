@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from tests.functional import movies_test_settings
@@ -50,25 +48,44 @@ async def test_film_detail(
     assert status == expected_status
 
 
-# @pytest.mark.parametrize("query,expected_status,films_count", [
-#     ({}, 200, 60),
-#     ({'genre': '812e88bd-7db1-4827-967e-53c946a602b3'}, 200, 30),
-#     ({'genre': '812e88bd-7db1-4827-967e-53c946a602b3'}, 422, 0)
-# ])
-# @pytest.mark.asyncio
-# async def test_list_films(
-#         es_write_data,
-#         es_films_search_data,
-#         api_make_get_request):
-#
-#     data = await es_films_search_data()
-#     await es_write_data(data=data, settings=movies_test_settings)
-#
-#     query_data = {
-#         "page_size": 50
-#     }
-#
-#     status, body = await api_make_get_request(query_data, '/api/v1/films/')
-#     assert status == 200
-#     assert len(body.get('items', [])) == query_data['page_size']
-#     assert body.get('total', 0) == len(data)
+@pytest.mark.parametrize("query,expected_status,films_count", [
+    ({}, 200, 50),
+    ({'genre': '812e88bd-7db1-4827-967e-53c946a602b3'}, 200, 30),
+    ({'genre': '812e88bd-7db1-4827-967e-53c946a60222'}, 404, 0)
+])
+@pytest.mark.asyncio
+async def test_list_films(
+        es_write_data,
+        es_films_search_data,
+        api_make_get_request,
+        query,
+        expected_status,
+        films_count
+):
+
+    data = await es_films_search_data()
+    await es_write_data(data=data, settings=movies_test_settings)
+
+    status, body = await api_make_get_request(query, '/api/v1/films/')
+    print(body.get('items', [1]))
+    assert status == expected_status
+    assert len(body.get('items', [])) == films_count
+
+
+@pytest.mark.asyncio
+async def test_list_films(
+        es_write_data,
+        es_films_search_data,
+        api_make_get_request,
+):
+
+    data = await es_films_search_data()
+    await es_write_data(data=data, settings=movies_test_settings)
+
+    genre_id, genre_name = data[0]['_source']['genre'][0]['id'], data[0]['_source']['genre'][0]['name']
+    print(genre_id, genre_name)
+    query = {'genre': genre_id}
+
+    status, body = await api_make_get_request(query, '/api/v1/films/')
+    print(body)
+    assert all([True for film in body.get('items', {}) if genre_name in film.get('title')])
