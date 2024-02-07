@@ -9,6 +9,15 @@ services:
       - ./fastapi-project/src:/app/src
       - ./fastapi-project/main.py:/app/main.py
 
+  redis:
+    image: redis:7.2.4
+    volumes:
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
   elasticsearch:
     image: elasticsearch:8.6.2
     environment:
