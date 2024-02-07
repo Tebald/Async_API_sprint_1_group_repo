@@ -94,7 +94,7 @@ class SortHandler(BaseHandler):
     Handled key: kwargs['sort']: Optional[str].
 
     IMPORTANT: In chain must be set before SearchHandler.
-    Otherwise, FilterHandler will write sort by its _score field as more important.
+    Otherwise, FiltersHandler will write sort by its _score field as more important.
 
     kwargs['sort'] contains field to sort by. For ascending use: '{field}'. For descending: '-{field}'.
     """

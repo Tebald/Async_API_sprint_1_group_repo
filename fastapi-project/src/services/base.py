@@ -49,18 +49,19 @@ class BaseService:
         """
         Returns list of objects suitable to kwargs params, and total count of objects by query.
 
-        Available all the kwargs from official documentation:
-        https://elasticsearch-py.readthedocs.io/en/7.9.1/
+        Available kwargs (but not required):
+            'page_number': int. Used with 'size' by PaginationHandler to build pagination kwargs.
+            'sort': string. Used by SortHandler to fill 'sort' list of constraints.
+            'filters': list of dicts like {'field': str, 'value': str, 'type': Optional[str]}.
+                Used by FiltersHandler to fill 'must' and 'should' lists of constraints.
+            'search': dict like {'field': str, 'value': str, 'fuzziness': Optional[str]}.
+                Used by SearchHandler to append 'must' list by search constraint
+                and to append 'sort' list by {'_score': 'desc'} constraint.
+        More information about a specific parameter you can find in the related class.
 
-        Additionally added:
-            page_number - An integer number of page to start pagination. Uses with `size`. >= 1.
-            size - A count of the record per page/answer. If empty, uses size=self.DEFAULT_SIZE.
-            search_field - A string name of field to run fizzy search. Always used with search_query.
-            search_query - A string value of field for fizzy search. Always used with search_field.
-
-        :param kwargs:
-        :return: [Film1, Film2, Film3], 3
+        Any other params will be left without changes and unpacked to elastic.search().
         """
+
         if not kwargs.get('size'):
             kwargs['size'] = self.DEFAULT_SIZE
         record_key = self.__class__.__name__ + str(kwargs)

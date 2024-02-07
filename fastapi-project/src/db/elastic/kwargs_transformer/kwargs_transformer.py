@@ -20,7 +20,7 @@ class KwargsTransformer:
         BodyHandler: Body creation. Always first.
         PaginationHandler: Pagination.
         SortHandler: Sorting.
-        FilterHandler: Filtration.
+        FiltersHandler: Filtration.
         SearchHandler: Searching. Never before SortHandler in chain.
     More info about fields structure and types in related handler class.
 
@@ -45,9 +45,22 @@ class KwargsTransformer:
 
     body_handler.set_next(pagination_handler).set_next(sort_handler).set_next(filter_handler).set_next(search_handler)
 
-    def transform(self, kwargs: dict) -> dict:
+    def transform(self, kwargs: dict | None) -> dict:
         """
-        Call self.body_handler to start chain of handlers.
+        Call self.body_handler to start chain of handlers to transform kwargs.
+
+        Available kwargs (but not required):
+            'size': int. Used to set count of returned records.
+            'page_number': int. Used with 'size' by PaginationHandler to build pagination kwargs.
+            'sort': string. Used by SortHandler to fill 'sort' list of constraints.
+            'filters': list of dicts like {'field': str, 'value': str, 'type': Optional[str]}.
+                Used by FiltersHandler to fill 'must' and 'should' lists of constraints.
+            'search': dict like {'field': str, 'value': str, 'fuzziness': Optional[str]}.
+                Used by SearchHandler to append 'must' list by search constraint
+                and to append 'sort' list by {'_score': 'desc'} constraint.
+        More information about a specific parameter you can find in the related class.
+
+        Any other params will be left without changes.
         :return: A dict of kwargs, processed by handlers and ready to unpack in ES.search().
         """
         new_kwargs = self.body_handler.handle(kwargs)
