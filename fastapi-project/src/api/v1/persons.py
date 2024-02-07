@@ -28,16 +28,16 @@ async def search_persons(
     """
     Returns a list of persons depends on filter.
     """
-    search_field = 'full_name'
+    search = {'field': 'full_name', 'value': query}
     params = check_params()
-    persons = await person_service.get_many(
-        search_field=search_field, search_query=query, page_number=params.page, size=params.size
+    persons, total = await person_service.get_many(
+        search=search, page_number=params.page, size=params.size
     )
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [person.dict() for person in persons]
-    return Page.create(items=res, total=person_service.index_total_records, params=params)
+    return Page.create(items=res, total=total, params=params)
 
 
 @router.get(
@@ -51,7 +51,7 @@ async def person_details(uuid: UUID4, person_service: PersonsService = Depends(g
     """
     Returns info regarding a Person, found by person_id.
     """
-    person = await person_service.get_one(str(uuid))
+    person = await person_service.get_by_id(str(uuid))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -73,7 +73,7 @@ async def person_films(
     """
     Returns a list of films associated with a Person.
     """
-    person = await person_service.get_one(str(uuid))
+    person = await person_service.get_by_id(str(uuid))
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')

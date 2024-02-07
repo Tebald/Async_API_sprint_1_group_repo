@@ -21,19 +21,19 @@ async def list_of_films(
     genre: Optional[str] = Query(None, description='Genre UUID for filtering'),
 ):
     params = check_params()
-
-    films = await film_service.get_many(sort=sort, genre=genre, page_number=params.page, size=params.size)
+    filter_ = {'field': 'genre.id', 'value': genre, 'type': 'must'}
+    films, total = await film_service.get_many(sort=sort, filters=[filter_], page_number=params.page, size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [FilmShort.parse_obj(film) for film in films]
-    return Page.create(items=res, total=film_service.index_total_records, params=params)
+    return Page.create(items=res, total=total, params=params)
 
 
 @router.get('/{film_id}', response_model=FilmSchema)
 async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
-    film = await film_service.get_one(str(uuid))
+    film = await film_service.get_by_id(str(uuid))
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -45,14 +45,14 @@ async def search_films(
     query: Annotated[str, Query('', description='Film title for searching', min_length=1)],
     film_service: FilmsService = Depends(get_films_service),
 ):
-    search_field = 'title'
+    search = {'field': 'title', 'value': query}
     params = check_params()
-    films = await film_service.get_many(
-        search_query=query, search_field=search_field, page_number=params.page, size=params.size
+    films, total = await film_service.get_many(
+        search=search, page_number=params.page, size=params.size
     )
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [film.dict() for film in films]
-    return Page.create(items=res, total=film_service.index_total_records, params=params)
+    return Page.create(items=res, total=total, params=params)

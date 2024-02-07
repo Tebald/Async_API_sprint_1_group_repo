@@ -1,4 +1,7 @@
 services:
+  elasticsearch:
+    ports:
+      - '9200:9200'
   api:
     build:
       context: ./fastapi-project

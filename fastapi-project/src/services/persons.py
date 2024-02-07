@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from fastapi import Depends
 
+from src.db.elastic.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
 from src.models.person import Person
 from src.schemas import PersonSchema
 from src.services.base import BaseService
@@ -25,6 +26,7 @@ class PersonsService(BaseService):
 def get_persons_service(
     redis_service: RedisService = Depends(get_redis_service),
     elastic_service: ElasticService = Depends(get_elastic_service),
+    kwargs_transformer: KwargsTransformer = Depends(get_kwargs_transformer),
 ) -> PersonsService:
     """
     Provider of TransferService.
@@ -33,6 +35,7 @@ def get_persons_service(
 
     :param redis_service:
     :param elastic_service:
+    :param kwargs_transformer:
     :return:
     """
-    return PersonsService(redis_service, elastic_service)
+    return PersonsService(redis_service, elastic_service, kwargs_transformer)

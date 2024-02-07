@@ -7,7 +7,8 @@ from redis.asyncio import Redis
 
 from src.api.v1 import films, genres, persons
 from src.core import config
-from src.db import _redis, elastic
+from src.db import _redis
+from src.db.elastic import elastic
 
 app = FastAPI(
     title=config.PROJECT_NAME,

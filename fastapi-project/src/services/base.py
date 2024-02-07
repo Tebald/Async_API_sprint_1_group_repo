@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import Depends
 
+from src.db.elastic.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
 from src.models import ElasticModel
 from src.schemas import Schema
 from src.services.elastic import ElasticService, get_elastic_service
@@ -17,16 +18,17 @@ class BaseService:
     """
 
     index: str
-    index_total_records: int
     elastic_model: ElasticModel
     redis_model: Schema
-    DEFAULT_SIZE = 100
 
-    def __init__(self, redis_service: RedisService, elastic_service: ElasticService):
+    def __init__(
+        self, redis_service: RedisService, elastic_service: ElasticService, kwargs_transformer: KwargsTransformer
+    ):
         self.redis_service: RedisService = redis_service
         self.elastic_service: ElasticService = elastic_service
+        self.kwargs_transformer: KwargsTransformer = kwargs_transformer
 
-    async def get_one(self, object_id: str) -> Optional[ElasticModel]:
+    async def get_by_id(self, object_id: str) -> Optional[ElasticModel]:
         """
         Returns object Film/Person/Genre by its ID.
 
@@ -41,12 +43,9 @@ class BaseService:
                 await self.redis_service.put(entity=entity)
         return entity
 
-    async def get_many(self, **kwargs) -> Optional[list[ElasticModel]]:
+    async def get_many(self, **kwargs) -> Optional[tuple[list[ElasticModel], int]]:
         """
-        Returns list of objects suitable to kwargs params.
-
-        Also sets self.index_total_records param.
-        It represents count of records in current index and being used for pagination.
+        Returns list of objects suitable to kwargs params, and total count of objects by query.
 
         Available all the kwargs from official documentation:
         https://elasticsearch-py.readthedocs.io/en/7.9.1/
@@ -58,10 +57,10 @@ class BaseService:
             search_query - A string value of field for fizzy search. Always used with search_field.
 
         :param kwargs:
-        :return: [Film1, Film2, Film3]
+        :return: [Film1, Film2, Film3], 3
         """
-        record_key = str(kwargs)
-        kwargs = self._process_kwargs(kwargs)
+        record_key = self.__class__.__name__ + str(kwargs)
+        kwargs = self.kwargs_transformer.transform(kwargs)
 
         result = await self.redis_service.get_many(record_key, self.redis_model)
         if not result:
@@ -69,8 +68,8 @@ class BaseService:
             if result:
                 await self.redis_service.put_many(record_key, result)
 
-        self.index_total_records = await self.elastic_service.count(self.index)
-        return result
+        total_records = await self.elastic_service.count(self.index, query=kwargs['body']['query'])
+        return result, total_records
 
     async def get_by_ids(self, object_ids: list[str]) -> Optional[list[ElasticModel]]:
         """
@@ -81,38 +80,12 @@ class BaseService:
         """
         return await self.elastic_service.mget(self.index, self.elastic_model, object_ids)
 
-    def _process_kwargs(self, kwargs: dict):
-        """Handles available kwargs for get_many().
-
-        More information in get_many().
-        """
-        if kwargs.get('page_number'):
-            kwargs['from_'] = (kwargs.pop('page_number') - 1) * kwargs.get('size')
-        if kwargs.get('search_query'):
-            kwargs['body'] = self._build_search_body(kwargs.pop('search_field'), kwargs.pop('search_query'))
-        if not kwargs.get('size'):
-            kwargs['size'] = self.DEFAULT_SIZE
-        return kwargs
-
-    def _build_search_body(self, search_field: str, search_query: str) -> dict:
-        """Fixture for ES fuzzy search query."""
-        return {
-            'query': {
-                'multi_match': {
-                    'query': search_query,
-                    'fields': [search_field],
-                    'type': 'best_fields',
-                    'fuzziness': 'auto',
-                }
-            },
-            'sort': ['_score'],
-        }
-
 
 @lru_cache()
-def get_transfer_service(
+def get_base_service(
     redis_service: RedisService = Depends(get_redis_service),
     elastic_service: ElasticService = Depends(get_elastic_service),
+    kwargs_transformer: KwargsTransformer = Depends(get_kwargs_transformer),
 ) -> BaseService:
     """
     Provider of TransferService.
@@ -121,6 +94,7 @@ def get_transfer_service(
 
     :param redis_service:
     :param elastic_service:
+    :param kwargs_transformer:
     :return:
     """
-    return BaseService(redis_service, elastic_service)
+    return BaseService(redis_service, elastic_service, kwargs_transformer)
