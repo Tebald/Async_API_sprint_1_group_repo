@@ -6,7 +6,7 @@ from src.models import Film
 from src.schemas.films import FilmSchema
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
-from src.services.redis import RedisService, get_redis_service
+from src.services._redis import RedisService, get_redis_service
 
 
 class FilmsService(BaseService):

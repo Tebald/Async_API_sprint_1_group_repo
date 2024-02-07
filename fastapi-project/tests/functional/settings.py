@@ -13,7 +13,7 @@ def retrieve_state(file_path: str) -> dict:
 
 
 class TestBaseSettings(BaseSettings):
-    es_host: str = Field('127.0.0.1', env='ES_HOST')
+    es_host: str | None = None
     es_port: int = Field(9200, env='ES_PORT')
     redis_host: str = Field('127.0.0.1', env='REDIS_HOST')
     redis_port: int = Field(6379, env='REDIS_PORT')
@@ -21,7 +21,7 @@ class TestBaseSettings(BaseSettings):
     service_url: str = Field('http://0.0.0.0:8000', env='SERVICE_HOST')
 
     class Config:
-        env_file = '../../.env'
+        env_file = '../.env'
 
 
 class TestMoviesSettings(TestBaseSettings):
