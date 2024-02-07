@@ -1,7 +1,11 @@
 import json
 from json import JSONDecodeError
+import os
 
 from pydantic import BaseSettings, Field
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def retrieve_state(file_path: str) -> dict:
@@ -27,7 +31,8 @@ class TestBaseSettings(BaseSettings):
 class TestMoviesSettings(TestBaseSettings):
     es_index: str = Field('movies', env='ES_TEST_INDEX_MOVIES')
     # es_id_field: str = ...
-    es_index_mapping: dict = retrieve_state('./testdata/movies.json')
+    file_path = os.path.join(current_dir, 'testdata', 'movies.json')
+    es_index_mapping: dict = retrieve_state(file_path)
 
 
 class TestGenresSettings(TestBaseSettings):
