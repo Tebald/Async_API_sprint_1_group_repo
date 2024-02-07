@@ -97,3 +97,11 @@ def es_persons_search_data():
         return bulk_query
 
     return inner
+
+
+# @pytest_asyncio.fixture(name='es_list_genres')
+# def es_list_genres():
+#     async def inner():
+#
+#
+#     return inner

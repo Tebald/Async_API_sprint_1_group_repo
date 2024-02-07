@@ -1,8 +1,15 @@
 import pytest
 
 from tests.functional import movies_test_settings
-from tests.functional.conftest import es_write_data, api_make_get_request
+from tests.functional.conftest import es_write_data, api_make_get_request, es_delete_data
 from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_single_film
+
+
+@pytest.mark.asyncio
+async def test_no_films_data(api_make_get_request, es_delete_data):
+    await es_delete_data(movies_test_settings)
+    status, body = await api_make_get_request({}, '/api/v1/films/')
+    assert status == 404
 
 
 @pytest.mark.parametrize("query_data,expected_status", [
@@ -67,13 +74,12 @@ async def test_list_films(
     await es_write_data(data=data, settings=movies_test_settings)
 
     status, body = await api_make_get_request(query, '/api/v1/films/')
-    print(body.get('items', [1]))
     assert status == expected_status
     assert len(body.get('items', [])) == films_count
 
 
 @pytest.mark.asyncio
-async def test_list_films(
+async def test_list_films_genre_filtering(
         es_write_data,
         es_films_search_data,
         api_make_get_request,
@@ -83,9 +89,7 @@ async def test_list_films(
     await es_write_data(data=data, settings=movies_test_settings)
 
     genre_id, genre_name = data[0]['_source']['genre'][0]['id'], data[0]['_source']['genre'][0]['name']
-    print(genre_id, genre_name)
     query = {'genre': genre_id}
 
     status, body = await api_make_get_request(query, '/api/v1/films/')
-    print(body)
     assert all([True for film in body.get('items', {}) if genre_name in film.get('title')])

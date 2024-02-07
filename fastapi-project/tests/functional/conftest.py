@@ -57,6 +57,28 @@ def es_write_data():
     return inner
 
 
+@pytest_asyncio.fixture(name='es_delete_data')
+def es_delete_data():
+    async def inner(settings: test_index_settings):
+        host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
+        es_client = AsyncElasticsearch(hosts=host, verify_certs=False)
+
+        async with es_client as es:
+            try:
+                if await es.indices.exists(index=settings.es_index):
+                    await es.indices.delete(index=settings.es_index)
+                    await asyncio.sleep(1)
+
+                await es_client.indices.create(index=settings.es_index,
+                                               body=settings.es_index_mapping)
+
+                await es_client.indices.refresh(index=settings.es_index)
+            finally:
+                await es_client.close()
+
+    return inner
+
+
 @pytest_asyncio.fixture(name='api_make_get_request')
 def api_make_get_request(client_session):
 
