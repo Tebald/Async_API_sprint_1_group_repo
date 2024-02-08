@@ -42,7 +42,8 @@ class TestGenresSettings(TestBaseSettings):
 
 class TestPersonsSettings(TestBaseSettings):
     es_index: str = Field('persons', env='ES_TEST_INDEX_PERSONS')
-    es_index_mapping: dict = retrieve_state('./testdata/persons.json')
+    file_path = os.path.join(current_dir, 'testdata', 'persons.json')
+    es_index_mapping: dict = retrieve_state(file_path)
 
 
 test_base_settings = TestBaseSettings()
