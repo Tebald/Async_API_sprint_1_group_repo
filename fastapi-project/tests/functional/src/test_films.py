@@ -92,4 +92,42 @@ async def test_list_films_genre_filtering(
     query = {'genre': genre_id}
 
     status, body = await api_make_get_request(query, '/api/v1/films/')
-    assert all([True for film in body.get('items', {}) if genre_name in film.get('title')])
+    assert all([True for film in body.get('items', {}) if genre_name in film.get('title')]) == 1
+
+
+@pytest.mark.parametrize("endpoint,query,cache_key,prepare_data_func_name,", [
+    ('/api/v1/films', {}, "{'sort': '-imdb_rating', 'genre': None, 'page_number': 1, 'size': 50}", 'es_films_search_data'),
+
+    ('/api/v1/films/{film_id}', {'uuid': '95b7ddb4-1f59-4a2f-982d-65d733934b53'},
+     '95b7ddb4-1f59-4a2f-982d-65d733934b53', 'es_single_film')
+])
+@pytest.mark.asyncio
+async def test_films_cache(
+        redis_client,
+        es_delete_data,
+        es_write_data,
+        api_make_get_request,
+        prepare_films_data_factory,
+        prepare_data_func_name,
+        cache_key,
+        endpoint,
+        query
+):
+    prepare_data_func = prepare_films_data_factory(prepare_data_func_name)
+    data = await prepare_data_func
+    await es_write_data(data=data, settings=movies_test_settings)
+
+    from_es_status, from_es_body = await api_make_get_request(query, endpoint)
+    assert from_es_status == 200
+
+    assert await redis_client.exists(cache_key) == 1
+
+    await es_delete_data(movies_test_settings)
+
+    from_cache_status, from_cache_body = await api_make_get_request(query, endpoint)
+    assert from_cache_status == 200
+
+    if endpoint == '/api/v1/films':
+        assert from_es_body.get('items') == from_cache_body.get('items')
+    else:
+        assert from_es_body == from_cache_body

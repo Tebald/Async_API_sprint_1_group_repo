@@ -42,6 +42,40 @@ async def test_genre_detail(
     data = await es_single_genre()
     await es_write_data(data=data, settings=genres_test_settings)
 
-    # TODO: поменять uuid на genre_id
     status, body = await api_make_get_request({"uuid": genre_id}, '/api/v1/genres/{genre_id}')
     assert status == expected_status
+
+
+@pytest.mark.parametrize("endpoint,query,cache_key,prepare_data_func_name,", [
+    ('/api/v1/genres', {}, '{}', 'es_list_genres'),
+
+    ('/api/v1/genres/{genre_id}', {'uuid': 'f2998290-8ea4-48ae-a3a0-1ea43becfa9b'},
+     'f2998290-8ea4-48ae-a3a0-1ea43becfa9b', 'es_single_genre')
+])
+@pytest.mark.asyncio
+async def test_genre_cache(
+        redis_client,
+        es_delete_data,
+        es_write_data,
+        api_make_get_request,
+        prepare_genres_data_factory,
+        prepare_data_func_name,
+        cache_key,
+        endpoint,
+        query
+):
+    prepare_data_func = prepare_genres_data_factory(prepare_data_func_name)
+    data = await prepare_data_func
+    await es_write_data(data=data, settings=genres_test_settings)
+
+    from_es_status, from_es_body = await api_make_get_request(query, endpoint)
+    assert from_es_status == 200
+
+    assert await redis_client.exists(cache_key) == 1
+
+    await es_delete_data(genres_test_settings)
+
+    from_cache_status, from_cache_body = await api_make_get_request(query, endpoint)
+    assert from_cache_status == 200
+
+    assert from_es_body == from_cache_body
