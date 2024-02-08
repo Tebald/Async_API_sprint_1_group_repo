@@ -9,7 +9,7 @@ from tests.functional.settings import movies_test_settings, persons_test_setting
     'query_data, expected_answer',
     [
         (
-                {'query': 'The Star', 'page_number': 1, 'page_size': 50},
+                {'query': 'Movie', 'page_number': 1, 'page_size': 50},
                 {'status': 200, 'length': 50}
         ),
         (

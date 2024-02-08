@@ -4,6 +4,8 @@ import aiohttp
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
+from redis.asyncio import Redis
+
 from tests.functional import test_index_settings
 from tests.functional.settings import test_base_settings
 
@@ -30,51 +32,48 @@ async def es_client():
     await es_client.close()
 
 
+@pytest_asyncio.fixture(name='redis_client', scope='session')
+async def redis_client():
+    redis_client = Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port)
+    yield redis_client
+    await redis_client.close()
+
+
+@pytest_asyncio.fixture(name='redis_clear', autouse=True)
+async def redis_clear(redis_client):
+    await redis_client.flushdb(asynchronous=True)
+
+
 @pytest_asyncio.fixture(name='es_write_data')
-def es_write_data():
-
+def es_write_data(es_client):
     async def inner(data: list[dict], settings: test_index_settings):
+        if await es_client.indices.exists(index=settings.es_index):
+            await es_client.indices.delete(index=settings.es_index)
+            await asyncio.sleep(1)
 
-        host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
-        es_client = AsyncElasticsearch(hosts=host, verify_certs=False)
-        try:
-            if await es_client.indices.exists(index=settings.es_index):
-                await es_client.indices.delete(index=settings.es_index)
-                await asyncio.sleep(1)
+        await es_client.indices.create(index=settings.es_index, body=settings.es_index_mapping)
+        await es_client.indices.refresh(index=settings.es_index)
 
-            await es_client.indices.create(index=settings.es_index, body=settings.es_index_mapping)
-
-            await es_client.indices.refresh(index=settings.es_index)
-
-            updated, errors = await async_bulk(client=es_client, actions=data)
-
-            await es_client.indices.refresh(index=settings.es_index)
-        finally:
-            await es_client.close()
+        _, errors = await async_bulk(client=es_client, actions=data)
+        await es_client.indices.refresh(index=settings.es_index)
 
         if errors:
             raise Exception('Error during Elasticsearch data push.')
+
     return inner
 
 
 @pytest_asyncio.fixture(name='es_delete_data')
-def es_delete_data():
+def es_delete_data(es_client):
     async def inner(settings: test_index_settings):
-        host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
-        es_client = AsyncElasticsearch(hosts=host, verify_certs=False)
+        if await es_client.indices.exists(index=settings.es_index):
+            await es_client.indices.delete(index=settings.es_index)
+            await asyncio.sleep(1)
 
-        async with es_client as es:
-            try:
-                if await es.indices.exists(index=settings.es_index):
-                    await es.indices.delete(index=settings.es_index)
-                    await asyncio.sleep(1)
+        await es_client.indices.create(index=settings.es_index,
+                                       body=settings.es_index_mapping)
 
-                await es_client.indices.create(index=settings.es_index,
-                                               body=settings.es_index_mapping)
-
-                await es_client.indices.refresh(index=settings.es_index)
-            finally:
-                await es_client.close()
+        await es_client.indices.refresh(index=settings.es_index)
 
     return inner
 

@@ -8,12 +8,7 @@ from tests.functional.utils.generate import generate_film_data
 
 @pytest_asyncio.fixture(name='es_single_film')
 def es_single_film():
-
     async def inner():
-        """
-        Finction to prepare data for testing '/api/v1/films/search/' endpoint.
-        :return:
-        """
         es_data = {
             'id': '95b7ddb4-1f59-4a2f-982d-65d733934b53',
             'imdb_rating': 8.5,
@@ -99,9 +94,41 @@ def es_persons_search_data():
     return inner
 
 
-# @pytest_asyncio.fixture(name='es_list_genres')
-# def es_list_genres():
-#     async def inner():
-#
-#
-#     return inner
+@pytest_asyncio.fixture(name='es_list_genres')
+def es_list_genres():
+    async def inner():
+        es_data = [
+            {
+                'id': uuid.uuid4(),
+                'name': 'Action',
+                'description': 'Some description'
+            }
+        for _ in range(10)]
+        bulk_query: list[dict] = []
+        for genre in es_data:
+            data = {'_index': 'genres', '_id': genre['id']}
+            data.update({'_source': genre})
+            bulk_query.append(data)
+
+        return bulk_query
+
+    return inner
+
+
+@pytest_asyncio.fixture(name='es_single_genre')
+def es_single_genre():
+    async def inner():
+        es_data = {
+            'id': 'f2998290-8ea4-48ae-a3a0-1ea43becfa9b',
+            'name': 'Action',
+            'description': 'Some description'
+        }
+
+        query: list[dict] = []
+        data = {'_index': 'genres', '_id': es_data['id']}
+        data.update({'_source': es_data})
+        query.append(data)
+
+        return query
+
+    return inner
