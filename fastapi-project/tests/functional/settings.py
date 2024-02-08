@@ -1,9 +1,8 @@
 import json
-from json import JSONDecodeError
 import os
+from json import JSONDecodeError
 
 from pydantic import BaseSettings, Field
-
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 

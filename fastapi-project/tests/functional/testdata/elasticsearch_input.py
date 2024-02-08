@@ -1,4 +1,3 @@
-import datetime
 import uuid
 
 import pytest_asyncio
@@ -102,8 +101,8 @@ def es_list_genres():
                 'id': uuid.uuid4(),
                 'name': 'Action',
                 'description': 'Some description'
-            }
-        for _ in range(10)]
+            } for _ in range(10)
+        ]
         bulk_query: list[dict] = []
         for genre in es_data:
             data = {'_index': 'genres', '_id': genre['id']}

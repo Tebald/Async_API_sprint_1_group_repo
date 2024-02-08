@@ -1,7 +1,7 @@
 import pytest
 
 from tests.functional import genres_test_settings
-from tests.functional.testdata.elasticsearch_input import es_list_genres, es_single_genre
+from tests.functional.testdata.elasticsearch_input import es_list_genres, es_single_genre  # noqa: F401
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_list_genres(
     assert status == 200
     assert len(body) == len(data)
 
-#
+
 @pytest.mark.parametrize("genre_id,expected_status", [
     ('f2998290-8ea4-48ae-a3a0-1ea43becfa9b', 200),
     ('95b7ddb4-1f59-4a2f-982d-65d733934b22', 404),

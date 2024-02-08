@@ -1,8 +1,8 @@
 import pytest
 
-from tests.functional.conftest import es_write_data, api_make_get_request
-from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_persons_search_data
+from tests.functional.conftest import api_make_get_request, es_write_data  # noqa: F401
 from tests.functional.settings import movies_test_settings, persons_test_settings
+from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_persons_search_data  # noqa: F401
 
 
 @pytest.mark.parametrize(
@@ -28,7 +28,7 @@ from tests.functional.settings import movies_test_settings, persons_test_setting
                 {'query': 'The Star', 'page_number': 1, 'page_size': 101},
                 {'status': 422, 'length': 0}
         ),
-(
+        (
                 {'query': 'The Star', 'page_number': 'a', 'page_size': 50},
                 {'status': 422, 'length': 0}
         ),
@@ -89,7 +89,7 @@ async def test_films_search(
                 {'query': 'Nash Bridges', 'page_number': 1, 'page_size': 101},
                 {'status': 422, 'length': 0}
         ),
-(
+        (
                 {'query': 'Nash Bridges', 'page_number': 'a', 'page_size': 50},
                 {'status': 422, 'length': 0}
         ),

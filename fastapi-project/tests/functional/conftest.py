@@ -1,6 +1,6 @@
 import asyncio
-import aiohttp
 
+import aiohttp
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk

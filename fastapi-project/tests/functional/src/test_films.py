@@ -1,8 +1,7 @@
 import pytest
 
 from tests.functional import movies_test_settings
-from tests.functional.conftest import es_write_data, api_make_get_request, es_delete_data
-from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_single_film
+from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_single_film  # noqa: F401
 
 
 @pytest.mark.asyncio
