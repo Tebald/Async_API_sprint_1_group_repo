@@ -4,14 +4,13 @@ from typing import Optional
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
-
 from src.db.elastic import get_elastic
 from src.models import ElasticModel
 
 
 class ElasticService:
     """
-    A class to combine all the Elasticsearch functions in the one place.
+    A class to combine all the Elasticsearch functions in one place.
     It contains all functions, used to fetch data from Elasticsearch.
     """
     def __init__(self, elastic: AsyncElasticsearch):
@@ -71,14 +70,15 @@ class ElasticService:
         except NotFoundError:
             return None
 
-    async def count(self, index: str) -> int:
+    async def count(self, index: str, query: dict = None) -> int:
         """Process `count` query to Elasticsearch.
 
         Gets count of records in specified index.
         :param index: A name of the index.
-        :return: Integer, representing count.
+        :param query: A query to process count.
+        :return: An integer count of records.
         """
-        count = await self.elastic.count(index=index)
+        count = await self.elastic.count(index=index, body={'query': query})
         return count.get('count')
 
 

@@ -6,7 +6,6 @@ from fastapi import Depends
 from orjson import orjson
 from pydantic.json import pydantic_encoder
 from redis.asyncio import Redis
-
 from src.db._redis import get_redis
 from src.schemas import Schema
 
@@ -47,11 +46,11 @@ class RedisService:
         if not data:
             return None
 
-        result = [model(**film) for film in orjson.loads(data)]
+        result = [model(**entity) for entity in orjson.loads(data)]
         logging.info('Retrieved objects from cache: key=%s', record_key)
         return result
 
-    async def put(self, entity: Schema):
+    async def put(self, entity: Schema) -> None:
         """
         Save object info using set https://redis.io/commands/set/.
         Pydantic allows to serialize model to json.
@@ -66,7 +65,7 @@ class RedisService:
         except AttributeError:
             logging.error("Cannot cache object: %s. No attribute 'uuid'.", entity.__class__)
 
-    async def put_many(self, record_key: str, entities: list[Schema]):
+    async def put_many(self, record_key: str, entities: list[Schema]) -> None:
         """
         Save multiple objects to cache using set https://redis.io/commands/set/.
         :param record_key: A string key to store record.

@@ -3,7 +3,6 @@ from typing import Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
-
 from src.api.pagination import Page
 from src.api.validators import check_params
 from src.schemas import FilmSchema, FilmShort
@@ -20,20 +19,27 @@ async def list_of_films(
     ),
     genre: Optional[str] = Query(None, description='Genre UUID for filtering'),
 ):
+    """
+    Return a list of films.
+    Available options:
+    - Sort by rating.
+    - Filter by genre uuid.
+    - Results pagination.
+    """
     params = check_params()
-
-    films = await film_service.get_many(sort=sort, genre=genre, page_number=params.page, size=params.size)
+    filter_ = {'field': 'genre.id', 'value': genre} if genre else None
+    films, total = await film_service.get_many(sort=sort, filters=[filter_], page_number=params.page, size=params.size)
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [FilmShort.parse_obj(film) for film in films]
-    return Page.create(items=res, total=film_service.index_total_records, params=params)
+    return Page.create(items=res, total=total, params=params)
 
 
-@router.get('/{film_id}', response_model=FilmSchema)
+@router.get('/{film_id}', response_model=FilmSchema, description='Return details about film by UUID')
 async def film_details(film_id: UUID4, film_service: FilmsService = Depends(get_films_service)):
-    film = await film_service.get_one(str(film_id))
+    film = await film_service.get_by_id(str(film_id))
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -45,14 +51,20 @@ async def search_films(
     query: Annotated[str, Query('', description='Film title for searching', min_length=1)],
     film_service: FilmsService = Depends(get_films_service),
 ):
-    search_field = 'title'
+    """
+    Return a list of films with the most relevant title.
+    Available options:
+    - Search by film title.
+    - Results pagination.
+    """
+    search = {'field': 'title', 'value': query}
     params = check_params()
-    films = await film_service.get_many(
-        search_query=query, search_field=search_field, page_number=params.page, size=params.size
+    films, total = await film_service.get_many(
+        search=search, page_number=params.page, size=params.size
     )
 
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
     res = [film.dict() for film in films]
-    return Page.create(items=res, total=film_service.index_total_records, params=params)
+    return Page.create(items=res, total=total, params=params)

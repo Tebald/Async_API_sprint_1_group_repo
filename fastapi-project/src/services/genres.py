@@ -1,12 +1,12 @@
 from functools import lru_cache
 
 from fastapi import Depends
-
 from src.models.genre import Genre
 from src.schemas import GenreSchema
+from src.services._redis import RedisService, get_redis_service
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
-from src.services._redis import RedisService, get_redis_service
+from src.utils.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
 
 
 class GenresService(BaseService):
@@ -26,6 +26,7 @@ class GenresService(BaseService):
 def get_genres_service(
     redis_service: RedisService = Depends(get_redis_service),
     elastic_service: ElasticService = Depends(get_elastic_service),
+        kwargs_transformer: KwargsTransformer = Depends(get_kwargs_transformer),
 ) -> GenresService:
     """
     Provider of TransferService.
@@ -34,6 +35,7 @@ def get_genres_service(
 
     :param redis_service:
     :param elastic_service:
+    :param kwargs_transformer:
     :return:
     """
-    return GenresService(redis_service, elastic_service)
+    return GenresService(redis_service, elastic_service, kwargs_transformer)

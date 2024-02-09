@@ -1,4 +1,12 @@
 services:
+  redis:
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+
+  elasticsearch:
+    ports:
+      - ${ES_PORT}:${ES_PORT}
+
   api:
     build:
       context: ./fastapi-project
@@ -8,32 +16,3 @@ services:
     volumes:
       - ./fastapi-project/src:/app/src
       - ./fastapi-project/main.py:/app/main.py
-
-  redis:
-    image: redis:7.2.4
-    volumes:
-      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
-    ports:
-      - ${REDIS_PORT}:${REDIS_PORT}
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-
-  elasticsearch:
-    image: elasticsearch:8.6.2
-    environment:
-      ES_JAVA_OPTS: "-Xms1000m -Xmx1000m"
-      discovery.type: single-node
-      xpack.security.enabled: false
-      http.port: ${ES_PORT}
-    ports:
-      - ${ES_PORT}:${ES_PORT}
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://${ES_HOST}:${ES_PORT}/_cluster/health?wait_for_status=yellow&timeout=5s" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-volumes:
-  es_data:
