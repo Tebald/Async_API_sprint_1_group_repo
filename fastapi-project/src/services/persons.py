@@ -6,7 +6,7 @@ from src.models.person import Person
 from src.schemas import PersonSchema
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
-from src.services.redis import RedisService, get_redis_service
+from src.services._redis import RedisService, get_redis_service
 
 
 class PersonsService(BaseService):

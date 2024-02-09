@@ -6,7 +6,7 @@ from src.models import Film
 from src.schemas.films import FilmSchema
 from src.services.base import BaseService
 from src.services.elastic import ElasticService, get_elastic_service
-from src.services.redis import RedisService, get_redis_service
+from src.services._redis import RedisService, get_redis_service
 
 
 class FilmsService(BaseService):
@@ -27,11 +27,12 @@ class FilmsService(BaseService):
 
         Added kwargs has default value If they are not being provided.
         """
-        kwargs = super()._process_kwargs(kwargs)
         kwargs['body'] = {
             'query': self._process_genre_filter(kwargs.pop('genre', None)),
             'sort': self._process_sort(kwargs.pop('sort', '-_score')),
         }
+        kwargs = super()._process_kwargs(kwargs)
+
         return kwargs
 
     @staticmethod

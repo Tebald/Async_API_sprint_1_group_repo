@@ -6,7 +6,7 @@ from fastapi import Depends
 from src.models import ElasticModel
 from src.schemas import Schema
 from src.services.elastic import ElasticService, get_elastic_service
-from src.services.redis import RedisService, get_redis_service
+from src.services._redis import RedisService, get_redis_service
 
 
 class BaseService:

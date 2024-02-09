@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     root_log_lvl: str = Field('INFO', env='API_ROOT_LOG_LVL')
 
     class Config:
-        env_file = '../../.env'
+        env_file = '../.env'
 
 
 settings = Settings()
