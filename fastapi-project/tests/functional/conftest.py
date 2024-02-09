@@ -66,7 +66,6 @@ def es_delete_data(es_client):
     async def inner(settings: test_index_settings):
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
-            await asyncio.sleep(1)
 
         await es_client.indices.create(index=settings.es_index,
                                        body=settings.es_index_mapping)
