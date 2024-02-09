@@ -5,7 +5,7 @@ from typing import Optional
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 
-from src.db.elastic.elastic import get_elastic
+from src.db.elastic import get_elastic
 from src.models import ElasticModel
 
 

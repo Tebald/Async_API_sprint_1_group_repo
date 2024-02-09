@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import Depends
 
-from src.db.elastic.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
+from src.utils.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
 from src.models import ElasticModel
 from src.schemas import Schema
 from src.services.elastic import ElasticService, get_elastic_service

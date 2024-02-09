@@ -1,6 +1,6 @@
 import logging
 
-from src.db.elastic.kwargs_transformer.handlers import (
+from src.utils.kwargs_transformer.handlers import (
     BodyHandler,
     PaginationHandler,
     SortHandler,

@@ -2,7 +2,7 @@ from functools import lru_cache
 
 from fastapi import Depends
 
-from src.db.elastic.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
+from src.utils.kwargs_transformer import KwargsTransformer, get_kwargs_transformer
 from src.models import Film
 from src.schemas.films import FilmSchema
 from src.services.base import BaseService

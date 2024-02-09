@@ -4,7 +4,7 @@ import abc
 import logging
 from typing import Optional
 
-from src.db.elastic.kwargs_transformer.constraints import SortConstraint, FilterConstraint, SearchConstraint
+from src.utils.kwargs_transformer.constraints import SortConstraint, FilterConstraint, SearchConstraint
 
 logger = logging.getLogger(__name__)
 
