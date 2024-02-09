@@ -1,3 +1,6 @@
+"""
+Module to store all test settings in one place.
+"""
 import json
 import os
 from json import JSONDecodeError
@@ -9,10 +12,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def retrieve_state(file_path: str) -> dict:
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding='utf-8') as file:
             return json.load(file)
-    except (FileNotFoundError, JSONDecodeError):
-        return dict()
+    except (FileNotFoundError, JSONDecodeError) as exc:
+        raise Exception(f'Can not open file {file_path}') from exc
 
 
 class TestBaseSettings(BaseSettings):

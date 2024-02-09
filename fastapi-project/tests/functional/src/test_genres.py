@@ -1,3 +1,6 @@
+"""
+Group of tests for checking /api/v1/genres/ endpoint.
+"""
 import pytest
 
 from tests.functional import genres_test_settings

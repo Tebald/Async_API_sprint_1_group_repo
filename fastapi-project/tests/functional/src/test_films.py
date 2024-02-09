@@ -1,3 +1,6 @@
+"""
+Group of tests for checking /api/v1/films/ endpoint.
+"""
 import pytest
 
 from tests.functional import movies_test_settings
