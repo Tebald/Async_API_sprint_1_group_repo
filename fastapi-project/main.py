@@ -23,7 +23,7 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    logging.info('Config: %s', vars(settings))
+    logging.debug('Config: %s', vars(settings))
     _redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
     elastic.es = AsyncElasticsearch(hosts=[f'{config.ES_HOST}:{config.ES_PORT}'])
 
