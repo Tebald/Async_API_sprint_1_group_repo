@@ -49,16 +49,14 @@ def es_write_data(es_client):
     async def inner(data: list[dict], settings: test_index_settings):
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
-            await asyncio.sleep(1)
 
         await es_client.indices.create(index=settings.es_index, body=settings.es_index_mapping)
-        await es_client.indices.refresh(index=settings.es_index)
 
         _, errors = await async_bulk(client=es_client, actions=data)
+
         await es_client.indices.refresh(index=settings.es_index)
 
-        if errors:
-            raise Exception('Error during Elasticsearch data push.')
+        assert not errors, 'Error during Elasticsearch data push.'
 
     return inner
 
