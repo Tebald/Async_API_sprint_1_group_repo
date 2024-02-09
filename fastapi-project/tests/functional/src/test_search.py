@@ -55,7 +55,18 @@ async def test_films_search(
         api_make_get_request,
         query_data: dict,
         expected_answer: dict):
-
+    """
+    Test for checking /api/v1/films/search/ endpoint.
+    question0: search for an existing in the db film.
+    question1: search for missing in the db film.
+    question2-6: request data validation.
+    :param es_write_data:
+    :param es_films_search_data:
+    :param api_make_get_request:
+    :param query_data:
+    :param expected_answer:
+    :return:
+    """
     es_data = await es_films_search_data()
 
     await es_write_data(data=es_data, settings=movies_test_settings)
@@ -106,7 +117,18 @@ async def test_persons_search(
         api_make_get_request,
         query_data: dict,
         expected_answer: dict):
-
+    """
+    Test for checking /api/v1/persons/search/ endpoint.
+    question0: search for an existing in the db film.
+    question1: search for missing in the db film.
+    question2-6: request data validation.
+    :param es_write_data:
+    :param es_persons_search_data:
+    :param api_make_get_request:
+    :param query_data:
+    :param expected_answer:
+    :return:
+    """
     es_data = await es_persons_search_data()
 
     await es_write_data(data=es_data, settings=persons_test_settings)

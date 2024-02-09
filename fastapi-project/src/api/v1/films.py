@@ -32,8 +32,8 @@ async def list_of_films(
 
 
 @router.get('/{film_id}', response_model=FilmSchema)
-async def film_details(uuid: UUID4, film_service: FilmsService = Depends(get_films_service)):
-    film = await film_service.get_one(str(uuid))
+async def film_details(film_id: UUID4, film_service: FilmsService = Depends(get_films_service)):
+    film = await film_service.get_one(str(film_id))
     if not film:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 

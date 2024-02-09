@@ -29,7 +29,6 @@ class TestBaseSettings(BaseSettings):
 
 class TestMoviesSettings(TestBaseSettings):
     es_index: str = Field('movies', env='ES_TEST_INDEX_MOVIES')
-    # es_id_field: str = ...
     file_path = os.path.join(current_dir, 'testdata', 'movies.json')
     es_index_mapping: dict = retrieve_state(file_path)
 

@@ -47,11 +47,11 @@ async def search_persons(
     description='Search a person by id',
     response_description='Name and filmography',
 )
-async def person_details(uuid: UUID4, person_service: PersonsService = Depends(get_persons_service)):
+async def person_details(person_id: UUID4, person_service: PersonsService = Depends(get_persons_service)):
     """
     Returns info regarding a Person, found by person_id.
     """
-    person = await person_service.get_one(str(uuid))
+    person = await person_service.get_one(str(person_id))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
@@ -66,14 +66,14 @@ async def person_details(uuid: UUID4, person_service: PersonsService = Depends(g
     response_description='Name and imdb_rating of films',
 )
 async def person_films(
-    uuid: UUID4,
+    person_id: UUID4,
     person_service: PersonsService = Depends(get_persons_service),
     films_service: FilmsService = Depends(get_films_service),
 ):
     """
     Returns a list of films associated with a Person.
     """
-    person = await person_service.get_one(str(uuid))
+    person = await person_service.get_one(str(person_id))
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
