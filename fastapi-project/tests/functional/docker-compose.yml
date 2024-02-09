@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  tests:
+    build:
+      context: ./fastapi-project
+      target: tests
+    depends_on:
+      api:
+        condition: service_started
