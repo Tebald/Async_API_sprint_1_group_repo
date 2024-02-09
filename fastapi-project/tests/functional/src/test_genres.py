@@ -25,7 +25,7 @@ async def test_list_genres(
     assert len(body) == len(data)
 
 
-@pytest.mark.parametrize("genre_id,expected_status", [
+@pytest.mark.parametrize('genre_id, expected_status', [
     ('f2998290-8ea4-48ae-a3a0-1ea43becfa9b', 200),
     ('95b7ddb4-1f59-4a2f-982d-65d733934b22', 404),
     ('00000000-0000-0000-0000-000000000000', 422)
@@ -42,15 +42,25 @@ async def test_genre_detail(
     data = await es_single_genre()
     await es_write_data(data=data, settings=genres_test_settings)
 
-    status, body = await api_make_get_request({"uuid": genre_id}, '/api/v1/genres/{genre_id}')
+    endpoint = f'/api/v1/genres/{genre_id}'
+    status, body = await api_make_get_request(query_data={}, endpoint=endpoint)
     assert status == expected_status
 
 
-@pytest.mark.parametrize("endpoint,query,cache_key,prepare_data_func_name,", [
-    ('/api/v1/genres', {}, '{}', 'es_list_genres'),
+@pytest.mark.parametrize('endpoint, query, cache_key, prepare_data_func_name', [
+    (
+            '/api/v1/genres',
+            {},
+            '{}',
+            'es_list_genres'
+    ),
 
-    ('/api/v1/genres/{genre_id}', {'uuid': 'f2998290-8ea4-48ae-a3a0-1ea43becfa9b'},
-     'f2998290-8ea4-48ae-a3a0-1ea43becfa9b', 'es_single_genre')
+    (
+            '/api/v1/genres/f2998290-8ea4-48ae-a3a0-1ea43becfa9b',
+            {},
+            'f2998290-8ea4-48ae-a3a0-1ea43becfa9b',
+            'es_single_genre'
+    )
 ])
 @pytest.mark.asyncio
 async def test_genre_cache(

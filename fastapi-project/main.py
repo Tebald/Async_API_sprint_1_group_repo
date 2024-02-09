@@ -4,9 +4,11 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
+import logging
 
 from src.api.v1 import films, genres, persons
 from src.core import config
+from src.core.api_settings import settings
 from src.db import _redis, elastic
 
 app = FastAPI(
@@ -21,6 +23,7 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
+    logging.info('Config: %s', vars(settings))
     _redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
     elastic.es = AsyncElasticsearch(hosts=[f'{config.ES_HOST}:{config.ES_PORT}'])
 

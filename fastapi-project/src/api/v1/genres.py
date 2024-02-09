@@ -31,8 +31,8 @@ async def list_of_genres(genre_service: GenresService = Depends(get_genres_servi
             summary='Genre info',
             description='Search a genre by id',
             response_description='UUID and name')
-async def genre_details(uuid: UUID4, genre_service: GenresService = Depends(get_genres_service)):
-    genre = await genre_service.get_one(str(uuid))
+async def genre_details(genre_id: UUID4, genre_service: GenresService = Depends(get_genres_service)):
+    genre = await genre_service.get_one(str(genre_id))
     if not genre:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 
