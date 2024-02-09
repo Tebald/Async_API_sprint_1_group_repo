@@ -1,3 +1,7 @@
+"""
+Group of tests for checking
+/api/v1/films/search and /api/v1/persons/search/ endpoints.
+"""
 import pytest
 
 from tests.functional.conftest import api_make_get_request, es_write_data  # noqa: F401
