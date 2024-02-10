@@ -84,7 +84,8 @@ def api_make_get_request(client_session):
         :param endpoint: '/api/v1/films/search/'
         :return:
         """
-        url = test_base_settings.service_url + endpoint
+        url = f'http://{test_base_settings.service_host}:{test_base_settings.service_port}'
+        url += endpoint
         async with client_session.get(url, params=query_data) as response:
             body = await response.json()
             status = response.status
