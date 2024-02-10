@@ -2,7 +2,7 @@ import uuid
 
 import pytest_asyncio
 
-from tests.functional.utils.generate import generate_film_data
+from tests.functional.utils.generate import generate_film_data, generate_film_data_for_persons_film, bulk_query_from_data
 
 
 @pytest_asyncio.fixture(name='es_single_film')
