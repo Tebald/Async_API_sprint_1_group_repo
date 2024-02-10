@@ -24,3 +24,33 @@ def generate_film_data(genre_id: str, genre_name: str, title_prefix: str, count:
             {'id': 'b45bd7bc-2e16-46d5-b125-983d356768c6', 'name': 'Howard'}
         ],
     } for i in range(count)]
+
+
+def generate_person_data():
+    person_data = {
+        "id": "5ad2a0ae-14b4-4204-9516-a83fba77e6e8",
+        "full_name": "Mike Wazowski",
+        "films": [
+            {"id": str(uuid.uuid4()), "roles": ["writer", "actor"]},
+            {"id": str(uuid.uuid4()), "roles": ["director"]},
+            {"id": str(uuid.uuid4()), "roles": ["actor"]},
+            {"id": str(uuid.uuid4()), "roles": ["writer"]}
+        ],
+    }
+    return person_data
+
+
+def generate_person_data_without_films():
+    person_data = {
+        'id': '7847c001-1040-4b4c-b846-51376517ff08',
+        'full_name': 'Ralph Sergeev',
+        'films': []
+    }
+    return person_data
+
+
+def bulk_query_from_data(data):
+    if type(data) is dict:
+        return [{'_index': 'persons', '_id': data['id'], '_source': data}]
+    else:
+        return [{'_index': 'persons', '_id': source['id'], '_source': source} for source in data]
