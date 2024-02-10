@@ -131,27 +131,3 @@ def es_single_genre():
         return query
 
     return inner
-
-
-@pytest_asyncio.fixture(name='es_single_person_data')
-def es_single_person_data():
-    async def inner():
-        """
-        Function to prepare data for testing '/api/v1/persons/{person_id}' endpoint.
-        :return:
-        """
-        es_data = {
-            "id": "5ad2a0ae-14b4-4204-9516-a83fba77e6e8",
-            "full_name": "Mike Wazowski",
-            "films": [
-                {"id": str(uuid.uuid4()), "roles": ["writer", "actor"]},
-                {"id": str(uuid.uuid4()), "roles": ["director"]},
-                {"id": str(uuid.uuid4()), "roles": ["actor"]},
-                {"id": str(uuid.uuid4()), "roles": ["writer"]}
-            ],
-        }
-
-        bulk_query = [{'_index': 'persons', '_id': es_data['id'], '_source': es_data}]
-        return bulk_query
-
-    return inner

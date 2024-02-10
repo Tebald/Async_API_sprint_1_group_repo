@@ -28,13 +28,13 @@ def generate_film_data(genre_id: str, genre_name: str, title_prefix: str, count:
 
 def generate_person_data():
     person_data = {
-        "id": "5ad2a0ae-14b4-4204-9516-a83fba77e6e8",
-        "full_name": "Mike Wazowski",
-        "films": [
-            {"id": str(uuid.uuid4()), "roles": ["writer", "actor"]},
-            {"id": str(uuid.uuid4()), "roles": ["director"]},
-            {"id": str(uuid.uuid4()), "roles": ["actor"]},
-            {"id": str(uuid.uuid4()), "roles": ["writer"]}
+        'id': '5ad2a0ae-14b4-4204-9516-a83fba77e6e8',
+        'full_name': 'Mike Wazowski',
+        'films': [
+            {'id': str(uuid.uuid4()), 'roles': ['writer', 'actor']},
+            {'id': str(uuid.uuid4()), 'roles': ['director']},
+            {'id': str(uuid.uuid4()), 'roles': ['actor']},
+            {'id': str(uuid.uuid4()), 'roles': ['writer']}
         ],
     }
     return person_data

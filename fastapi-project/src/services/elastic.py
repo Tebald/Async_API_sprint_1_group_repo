@@ -13,6 +13,7 @@ class ElasticService:
     A class to combine all the Elasticsearch functions in one place.
     It contains all functions, used to fetch data from Elasticsearch.
     """
+
     def __init__(self, elastic: AsyncElasticsearch):
         self.elastic = elastic
 
@@ -37,7 +38,8 @@ class ElasticService:
         return result
 
     async def get(self, index: str, model: type[ElasticModel], object_id: str) -> Optional[ElasticModel]:
-        """Process `get` query to ElasticSearch.
+        """
+        Process `get` query to ElasticSearch.
 
         Returns an object if it exists in elastic.
         :param model:
@@ -54,24 +56,31 @@ class ElasticService:
             return None
 
     async def mget(self, index: str, model: type[ElasticModel], object_ids: list[str]) -> Optional[list[ElasticModel]]:
-        """Process `mget` query to Elasticsearch.
+        """
+        Process `mget` query to Elasticsearch. Gets list of API objects by ids.
 
-        Gets list of API objects by ids.
+        `object_ids` cannot be empty, but function still can return None.
+            Because all the objects from list may not exist in Elasticsearch.
+
         :param index: index to fetch.
         :param model: destination model to parse.
-        :param object_ids: list of objects ids.
+        :param object_ids: Not empty list of objects ids.
         :return: List of API objects.
         """
         try:
             response = await self.elastic.mget(index=index, body={'ids': object_ids})
-            result = [model(**item['_source']) for item in response['docs']]
-            logging.info('Retrieved objects from elasticsearch: count=(%s)', len(result))
-            return result
         except NotFoundError:
             return None
 
+        found_items = [item.get('_source') for item in response['docs'] if item.get('found')]
+        result = [model(**item) for item in found_items]
+
+        logging.info('Retrieved objects from elasticsearch: count=(%s)', len(result))
+        return result
+
     async def count(self, index: str, query: dict = None) -> int:
-        """Process `count` query to Elasticsearch.
+        """
+        Process `count` query to Elasticsearch.
 
         Gets count of records in specified index.
         :param index: A name of the index.
@@ -86,7 +95,8 @@ class ElasticService:
 def get_elastic_service(
     elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> ElasticService:
-    """Provider of ElasticService.
+    """
+    Provider of ElasticService.
 
     :param elastic: An AsyncElasticsearch exemplar which represents async connection to ES.
     :return: A Singleton of ElasticService.

@@ -79,7 +79,10 @@ class BaseService:
         """
         Gets objects from Elasticsearch by its ids.
         No cache.
-        :param object_ids: list of ids.
+        Object_ids mustn't be empty, but function still can return None.
+            Because all the objects from list may not exist in Elasticsearch.
+
+        :param object_ids: list of ids. Not empty.
         :return: list[ElasticModel] | None.
         """
         return await self.elastic_service.mget(self.index, self.elastic_model, object_ids)
