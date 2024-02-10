@@ -22,8 +22,8 @@ services:
     image: redis:7.2.4
     volumes:
       - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
-    expose:
-      - ${REDIS_PORT}
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
