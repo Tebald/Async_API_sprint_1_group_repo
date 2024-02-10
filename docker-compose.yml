@@ -22,7 +22,7 @@ services:
     expose:
       - ${ES_PORT}
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data_prod:/usr/share/elasticsearch/data
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://${ES_HOST}:${ES_PORT}/_cluster/health?wait_for_status=yellow&timeout=5s" ]
       interval: 10s
@@ -98,9 +98,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      etl:
-        condition: service_started
 
 volumes:
   pg_data:
-  es_data:
+  es_data_prod:
