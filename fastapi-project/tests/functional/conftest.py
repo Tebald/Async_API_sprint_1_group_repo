@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 import aiohttp
 import pytest_asyncio
@@ -18,14 +19,14 @@ def event_loop():
 
 
 @pytest_asyncio.fixture(name='client_session', scope='session')
-async def client_session():
+async def client_session() -> aiohttp.ClientSession:
     session = aiohttp.ClientSession()
     yield session
     await session.close()
 
 
 @pytest_asyncio.fixture(name='es_client', scope='session')
-async def es_client():
+async def es_client() -> AsyncElasticsearch:
     host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
     es_client = AsyncElasticsearch(hosts=host, verify_certs=False)
     yield es_client
@@ -33,7 +34,7 @@ async def es_client():
 
 
 @pytest_asyncio.fixture(name='redis_client', scope='session')
-async def redis_client():
+async def redis_client() -> Redis:
     redis_client = Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port)
     yield redis_client
     await redis_client.close()
@@ -76,9 +77,9 @@ def es_delete_data(es_client):
 
 
 @pytest_asyncio.fixture(name='api_make_get_request')
-def api_make_get_request(client_session):
+def api_make_get_request(client_session: aiohttp.ClientSession):
 
-    async def inner(query_data: dict, endpoint: str):
+    async def inner(query_data: dict, endpoint: str) -> tuple[int, Any]:
         """
         :param query_data: {'query': 'The Star', 'page_number': 1, 'page_size': 50}
         :param endpoint: '/api/v1/films/search/'
