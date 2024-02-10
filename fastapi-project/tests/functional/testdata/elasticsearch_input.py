@@ -131,3 +131,14 @@ def es_single_genre():
         return query
 
     return inner
+
+
+@pytest_asyncio.fixture(name='es_films_for_person_films')
+def es_films_for_person_films():
+    async def inner():
+        films = generate_film_data_for_persons_film()
+        bulk_query = bulk_query_from_data('movies', films)
+
+        return bulk_query
+
+    return inner
