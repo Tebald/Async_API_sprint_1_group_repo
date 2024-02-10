@@ -27,6 +27,9 @@ class TestBaseSettings(BaseSettings):
     service_host: str = Field('0.0.0.0', env='API_HOST')
     service_port: int = Field(8000, env='API_PORT')
 
+    class Config:
+        env_file = '../.env'
+
 
 class TestMoviesSettings(TestBaseSettings):
     es_index: str = Field('movies', env='ES_TEST_INDEX_MOVIES')
