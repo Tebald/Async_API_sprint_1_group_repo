@@ -118,3 +118,16 @@ def prepare_genres_data_factory(request):
             raise ValueError(f"Unknown fixture: {name}")
 
     return _prepare_data_func
+
+
+@pytest_asyncio.fixture(name='prepare_search_data_factory')
+def prepare_search_data_factory(request):
+    def _prepare_data_func(name):
+        if name == "es_films_search_data":
+            return request.getfixturevalue("es_films_search_data")()
+        if name == "es_persons_search_data":
+            return request.getfixturevalue("es_persons_search_data")()
+
+        raise ValueError(f"Unknown fixture: {name}")
+
+    return _prepare_data_func
