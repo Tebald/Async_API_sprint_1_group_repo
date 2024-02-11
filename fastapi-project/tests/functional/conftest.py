@@ -48,6 +48,7 @@ async def redis_clear(redis_client):
 @pytest_asyncio.fixture(name='es_write_data')
 def es_write_data(es_client):
     async def inner(data: list[dict], settings: test_index_settings):
+        """Accepts only data with in the correct Bulk form."""
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
 
@@ -118,3 +119,15 @@ def prepare_genres_data_factory(request):
             raise ValueError(f"Unknown fixture: {name}")
 
     return _prepare_data_func
+
+
+@pytest_asyncio.fixture(name='es_delete_record')
+def es_delete_record(es_client: AsyncElasticsearch):
+    """Delete a single record from the Elasticsearch by its id and ES index name."""
+
+    async def inner(index: str, object_id: str):
+        if await es_client.indices.exists(index=index):
+            await es_client.delete(index=index, id=object_id)
+            await es_client.indices.refresh(index=index)
+
+    return inner
