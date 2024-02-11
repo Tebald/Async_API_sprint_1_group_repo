@@ -98,8 +98,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      etl:
-        condition: service_started
 
 volumes:
   pg_data:

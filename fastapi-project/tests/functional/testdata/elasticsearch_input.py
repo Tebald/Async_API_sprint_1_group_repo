@@ -1,8 +1,9 @@
 import uuid
+from typing import Iterable
 
 import pytest_asyncio
 
-from tests.functional.utils.generate import generate_film_data, generate_film_data_for_persons_film, bulk_query_from_data
+from tests.functional.utils.generate import generate_film_data
 
 
 @pytest_asyncio.fixture(name='es_single_film')
@@ -133,11 +134,57 @@ def es_single_genre():
     return inner
 
 
-@pytest_asyncio.fixture(name='es_films_for_person_films')
-def es_films_for_person_films():
+@pytest_asyncio.fixture(name='es_person_with_four_films')
+def es_person_with_four_films():
     async def inner():
-        films = generate_film_data_for_persons_film()
-        bulk_query = bulk_query_from_data('movies', films)
+        person_data = {
+            'id': '5ad2a0ae-14b4-4204-9516-a83fba77e6e8',
+            'full_name': 'Mike Wazowski',
+            'films': [
+                {'id': str(uuid.uuid4()), 'roles': ['writer', 'actor']},
+                {'id': str(uuid.uuid4()), 'roles': ['director']},
+                {'id': str(uuid.uuid4()), 'roles': ['actor']},
+                {'id': str(uuid.uuid4()), 'roles': ['writer']},
+            ],
+        }
+        return person_data
+
+    return inner
+
+
+@pytest_asyncio.fixture(name='es_person_with_two_films')
+def es_person_with_two_films():
+    async def inner():
+        person_data = {
+            'id': '7847c001-1040-4b4c-b846-51376517ff08',
+            'full_name': 'Kai Angel',
+            'films': [
+                {'id': str(uuid.uuid4()), 'roles': ['director']},
+                {'id': str(uuid.uuid4()), 'roles': ['director']},
+            ],
+        }
+        return person_data
+
+    return inner
+
+
+@pytest_asyncio.fixture(name='es_person_without_films')
+def es_person_without_films():
+    async def inner():
+        person_data = {'id': str(uuid.uuid4()), 'full_name': 'Ralph Sergeev', 'films': []}
+
+        return person_data
+
+    return inner
+
+
+@pytest_asyncio.fixture(name='data_to_bulk')
+def data_to_bulk():
+    def inner(data: [dict | Iterable[dict]]) -> list[dict]:
+        if isinstance(data, dict):
+            bulk_query = [{'_index': 'movies', '_id': data['id'], '_source': data}]
+        else:
+            bulk_query = [{'_index': 'movies', '_id': data_dict['id'], '_source': data_dict} for data_dict in data]
 
         return bulk_query
 
