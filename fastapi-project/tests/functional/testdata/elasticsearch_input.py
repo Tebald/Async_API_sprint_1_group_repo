@@ -178,13 +178,13 @@ def es_person_without_films():
     return inner
 
 
-@pytest_asyncio.fixture(name='data_to_bulk')
-def data_to_bulk():
-    def inner(data: [dict | Iterable[dict]]) -> list[dict]:
-        if isinstance(data, dict):
-            bulk_query = [{'_index': 'movies', '_id': data['id'], '_source': data}]
+@pytest_asyncio.fixture(name='from_dict_to_bulk')
+def from_dict_to_bulk():
+    def inner(es_index: str, data_to_bulk: [dict | Iterable[dict]]) -> list[dict]:
+        if isinstance(data_to_bulk, dict):
+            bulk_query = [{'_index': es_index, '_id': data_to_bulk['id'], '_source': data_to_bulk}]
         else:
-            bulk_query = [{'_index': 'movies', '_id': data_dict['id'], '_source': data_dict} for data_dict in data]
+            bulk_query = [{'_index': es_index, '_id': data_dict['id'], '_source': data_dict} for data_dict in data_to_bulk]
 
         return bulk_query
 

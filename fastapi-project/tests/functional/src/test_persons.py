@@ -5,7 +5,12 @@ from redis.asyncio.client import Redis
 
 from tests.functional.conftest import api_make_get_request, es_delete_record
 from tests.functional.settings import persons_test_settings
-from tests.functional.testdata.elasticsearch_input import data_to_bulk, es_person_with_four_films, es_person_with_two_films, es_person_without_films
+from tests.functional.testdata.elasticsearch_input import (
+    from_dict_to_bulk,
+    es_person_with_four_films,
+    es_person_with_two_films,
+    es_person_without_films
+)
 
 
 @pytest.mark.asyncio
