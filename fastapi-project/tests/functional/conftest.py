@@ -41,8 +41,7 @@ async def es_client():
 async def redis_client():
     @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def get_redis_client():
-        client = Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port, decode_responses=True)
-        return client
+        return Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port, decode_responses=True)
 
     redis_client = await get_redis_client()
     yield redis_client
