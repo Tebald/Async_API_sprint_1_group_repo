@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 import aiohttp
 import backoff
@@ -19,14 +20,14 @@ def event_loop():
 
 
 @pytest_asyncio.fixture(name='client_session', scope='session')
-async def client_session():
+async def client_session() -> aiohttp.ClientSession:
     session = aiohttp.ClientSession()
     yield session
     await session.close()
 
 
 @pytest_asyncio.fixture(name='es_client', scope='session')
-async def es_client():
+async def es_client() -> AsyncElasticsearch:
     host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
     @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def get_es_client():
@@ -38,7 +39,7 @@ async def es_client():
 
 
 @pytest_asyncio.fixture(name='redis_client', scope='session')
-async def redis_client():
+async def redis_client() -> Redis:
     @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def get_redis_client():
         return Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port, decode_responses=True)
@@ -58,6 +59,7 @@ async def redis_clear(redis_client):
 def es_write_data(es_client):
     @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def inner(data: list[dict], settings: test_index_settings):
+        """Accepts only data with in the correct Bulk form."""
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
 
@@ -143,3 +145,15 @@ def prepare_search_data_factory(request):
         raise ValueError(f"Unknown fixture: {name}")
 
     return _prepare_data_func
+
+
+@pytest_asyncio.fixture(name='es_delete_record')
+def es_delete_record(es_client: AsyncElasticsearch):
+    """Delete a single record from the Elasticsearch by its id and ES index name."""
+
+    async def inner(index: str, object_id: str):
+        if await es_client.indices.exists(index=index):
+            await es_client.delete(index=index, id=object_id)
+            await es_client.indices.refresh(index=index)
+
+    return inner
