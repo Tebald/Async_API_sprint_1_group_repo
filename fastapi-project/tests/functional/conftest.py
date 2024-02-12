@@ -148,6 +148,7 @@ def prepare_search_data_factory(request):
 
 
 @pytest_asyncio.fixture(name='es_delete_record')
+@backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
 def es_delete_record(es_client: AsyncElasticsearch):
     """Delete a single record from the Elasticsearch by its id and ES index name."""
 
