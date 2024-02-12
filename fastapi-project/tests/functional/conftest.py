@@ -86,7 +86,8 @@ def api_make_get_request(client_session: aiohttp.ClientSession):
         :param endpoint: '/api/v1/films/search/'
         :return:
         """
-        url = test_base_settings.service_url + endpoint
+        url = f'http://{test_base_settings.service_host}:{test_base_settings.service_port}'
+        url += endpoint
         async with client_session.get(url, params=query_data) as response:
             body = await response.json()
             status = response.status
@@ -117,6 +118,19 @@ def prepare_genres_data_factory(request):
             return request.getfixturevalue("es_single_genre")()
         else:
             raise ValueError(f"Unknown fixture: {name}")
+
+    return _prepare_data_func
+
+
+@pytest_asyncio.fixture(name='prepare_search_data_factory')
+def prepare_search_data_factory(request):
+    def _prepare_data_func(name):
+        if name == "es_films_search_data":
+            return request.getfixturevalue("es_films_search_data")()
+        if name == "es_persons_search_data":
+            return request.getfixturevalue("es_persons_search_data")()
+
+        raise ValueError(f"Unknown fixture: {name}")
 
     return _prepare_data_func
 

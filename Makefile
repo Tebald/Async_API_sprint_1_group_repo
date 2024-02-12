@@ -2,19 +2,19 @@
 
 
 prod-up:
-	@docker compose up --build api nginx -d
+	@docker compose up -d --build
 
 prod-down:
 	@docker compose down
 
 dev-up:
-	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build api nginx -d
+	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 dev-down:
-	@docker compose down
+	@docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 tests-up:
-	@docker compose -f docker-compose.yml -f docker-compose.dev.yml -f fastapi-project/tests/functional/docker-compose.yml up --build tests
+	@docker compose -f docker-compose.tests.yml up -d --build
 
 tests-down:
-	@docker compose -f docker-compose.yml -f docker-compose.dev.yml -f fastapi-project/tests/functional/docker-compose.yml down tests
+	@docker compose -f docker-compose.tests.yml down
