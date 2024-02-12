@@ -79,11 +79,12 @@ async def person_films(
 
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
+    if not person.films:
+        return []
 
     film_ids = [film['id'] for film in person.films]
 
     films = await films_service.get_by_ids(film_ids)
-
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
 

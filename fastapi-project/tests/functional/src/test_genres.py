@@ -54,7 +54,7 @@ async def test_genre_detail(
     (
             '/api/v1/genres',
             {},
-            '{}',
+            "GenresService{'size': 1000}",
             'es_list_genres'
     ),
 
