@@ -1,6 +1,7 @@
 import uuid
 from typing import Iterable
 
+import pytest
 import pytest_asyncio
 
 from tests.functional.utils.generate import generate_film_data
@@ -55,8 +56,8 @@ def es_films_search_data():
         action_genre = {'id': '812e88bd-7db1-4827-967e-53c946a602b3', 'name': 'Action'}
         sci_fi_genre = {'id': 'b0585c47-e74a-4154-97f3-343fcb8b34d7', 'name': 'Sci-Fi'}
 
-        action_films = generate_film_data(action_genre['id'], action_genre['name'], 'Action', 30)
-        sci_fi_films = generate_film_data(sci_fi_genre['id'], sci_fi_genre['name'], 'Sci-Fi', 30)
+        action_films = generate_film_data(genres=[action_genre], title_prefix='Action', count=30)
+        sci_fi_films = generate_film_data(genres=[sci_fi_genre], title_prefix='Sci-Fi', count=30)
 
         es_data = action_films + sci_fi_films
 
@@ -134,48 +135,59 @@ def es_single_genre():
     return inner
 
 
-@pytest_asyncio.fixture(name='es_person_with_four_films')
-def es_person_with_four_films():
-    async def inner():
-        person_data = {
-            'id': '5ad2a0ae-14b4-4204-9516-a83fba77e6e8',
-            'full_name': 'Mike Wazowski',
-            'films': [
-                {'id': str(uuid.uuid4()), 'roles': ['writer', 'actor']},
-                {'id': str(uuid.uuid4()), 'roles': ['director']},
-                {'id': str(uuid.uuid4()), 'roles': ['actor']},
-                {'id': str(uuid.uuid4()), 'roles': ['writer']},
-            ],
-        }
-        return person_data
+@pytest.fixture(name='es_person_without_films')
+def es_person_without_films(from_dict_to_bulk):
+    """Fixture for person with empty films."""
+    person = {'id': 'd7bdcbf2-d4b4-401e-8a9e-c3022f20e565', 'full_name': 'Ralph Sergeev', 'films': []}
 
-    return inner
+    bulk_query = from_dict_to_bulk(es_index='persons', data_to_bulk=person)
+    return bulk_query
 
 
-@pytest_asyncio.fixture(name='es_person_with_two_films')
-def es_person_with_two_films():
-    async def inner():
-        person_data = {
-            'id': '7847c001-1040-4b4c-b846-51376517ff08',
-            'full_name': 'Kai Angel',
-            'films': [
-                {'id': str(uuid.uuid4()), 'roles': ['director']},
-                {'id': str(uuid.uuid4()), 'roles': ['director']},
-            ],
-        }
-        return person_data
+@pytest.fixture(name='es_person_with_two_films')
+def es_person_with_two_films(from_dict_to_bulk):
+    """Fixture for person with two films."""
+    person = {'id': '230a5bbf-3e31-4e53-b2a1-156dc51cd070', 'full_name': 'Kai Angel', 'films': []}
 
-    return inner
+    person_inline = {'id': person['id'], 'name': 'Kai Angel'}
+    films = generate_film_data(title_prefix='Some Kai', count=2, director=[person_inline])
+
+    person['films'] = [{'id': film['id'], 'roles': 'director'} for film in films]
+
+    bulk_person = from_dict_to_bulk(es_index='persons', data_to_bulk=person)
+    bulk_films = from_dict_to_bulk(es_index='movies', data_to_bulk=films)
+    bulk_result = bulk_person + bulk_films
+
+    return bulk_result
 
 
-@pytest_asyncio.fixture(name='es_person_without_films')
-def es_person_without_films():
-    async def inner():
-        person_data = {'id': str(uuid.uuid4()), 'full_name': 'Ralph Sergeev', 'films': []}
+@pytest.fixture(name='es_person_with_four_films')
+def es_person_with_four_films(from_dict_to_bulk):
+    """Fixture for person with four films and double role in one of them."""
+    person = {'id': '5ad2a0ae-14b4-4204-9516-a83fba77e6e8', 'full_name': 'Mike Wazowski', 'films': []}
+    person_inline = {'id': person['id'], 'name': 'Mike Wazowski'}
+    person_roles = [['writer', 'actor'], ['director'], ['actor'], ['writer']]
 
-        return person_data
+    films: list[dict] = []
 
-    return inner
+    # loop for every tuple with roles
+    for roles_list in person_roles:
+        # transforms tuple of roles to dict.
+        # like ('writer', 'actor') -> {'writer': 'Mike Wazowski', 'actor': 'Mike Wazowski'}
+        roles_dict = dict.fromkeys(roles_list, [person_inline])
+
+        # create film, add dict of roles as kwargs
+        film = generate_film_data(title_prefix='Random Mike', count=1, **roles_dict)[0]
+        films.append(film)
+
+        # adding film to person
+        film_inline = {'id': film['id'], 'roles': roles_list}
+        person['films'].append(film_inline)
+
+    bulk_person = from_dict_to_bulk(es_index='persons', data_to_bulk=person)
+    bulk_movies = from_dict_to_bulk(es_index='movies', data_to_bulk=films)
+    bulk_result = bulk_person + bulk_movies
+    return bulk_result
 
 
 @pytest_asyncio.fixture(name='from_dict_to_bulk')
@@ -184,7 +196,12 @@ def from_dict_to_bulk():
         if isinstance(data_to_bulk, dict):
             bulk_query = [{'_index': es_index, '_id': data_to_bulk['id'], '_source': data_to_bulk}]
         else:
-            bulk_query = [{'_index': es_index, '_id': data_dict['id'], '_source': data_dict} for data_dict in data_to_bulk]
+            bulk_query = [
+                {'_index': es_index,
+                 '_id': data_dict['id'],
+                 '_source': data_dict}
+                for data_dict in data_to_bulk
+            ]
 
         return bulk_query
 
