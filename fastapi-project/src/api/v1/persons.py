@@ -76,8 +76,11 @@ async def person_films(
     Returns a list of films associated with a Person.
     """
     person = await person_service.get_by_id(str(person_id))
-    if not person or not person.films:
+
+    if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')
+    if not person.films:
+        return []
 
     film_ids = [film['id'] for film in person.films]
 

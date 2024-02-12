@@ -150,7 +150,7 @@ def es_person_with_two_films(from_dict_to_bulk):
     person = {'id': '230a5bbf-3e31-4e53-b2a1-156dc51cd070', 'full_name': 'Kai Angel', 'films': []}
 
     person_inline = {'id': person['id'], 'name': 'Kai Angel'}
-    films = generate_film_data(title_prefix='Some Kai', count=2, director=[person_inline])
+    films = generate_film_data(title_prefix='Some Kai', count=2, directors=[person_inline])
 
     person['films'] = [{'id': film['id'], 'roles': 'director'} for film in films]
 
@@ -170,17 +170,17 @@ def es_person_with_four_films(from_dict_to_bulk):
 
     films: list[dict] = []
 
-    # loop for every tuple with roles
+    # loop for every list of roles
     for roles_list in person_roles:
-        # transforms tuple of roles to dict.
-        # like ('writer', 'actor') -> {'writer': 'Mike Wazowski', 'actor': 'Mike Wazowski'}
-        roles_dict = dict.fromkeys(roles_list, [person_inline])
+        # create a dict with roles.
+        # like ['writer', 'actor'] -> {'writers': [person_inline], 'actors': [person_inline]}
+        roles_dict = {role + 's': [person_inline] for role in roles_list}
 
-        # create film, add dict of roles as kwargs
+        # create and add film to the all films
         film = generate_film_data(title_prefix='Random Mike', count=1, **roles_dict)[0]
         films.append(film)
 
-        # adding film to person
+        # add film inline to the person (Mike)
         film_inline = {'id': film['id'], 'roles': roles_list}
         person['films'].append(film_inline)
 
@@ -188,6 +188,22 @@ def es_person_with_four_films(from_dict_to_bulk):
     bulk_movies = from_dict_to_bulk(es_index='movies', data_to_bulk=films)
     bulk_result = bulk_person + bulk_movies
     return bulk_result
+
+
+@pytest.fixture(name='es_person_with_inexisting_films')
+def es_person_with_inexisting_films(from_dict_to_bulk):
+    """Data for person with two film ids but these ids are missing in elastic movie index."""
+
+    person = {'id': 'bc029812-5ac8-4ff3-841b-c7e0efa72013', 'full_name': 'Empty Man', 'films': []}
+
+    person_inline = {'id': person['id'], 'name': 'Empty Man'}
+    films = generate_film_data(title_prefix='Missing Film', count=2, directors=[person_inline])
+
+    person['films'] = [{'id': film['id'], 'roles': 'director'} for film in films]
+
+    bulk_person = from_dict_to_bulk(es_index='persons', data_to_bulk=person)
+
+    return bulk_person, 0
 
 
 @pytest_asyncio.fixture(name='from_dict_to_bulk')
@@ -206,3 +222,10 @@ def from_dict_to_bulk():
         return bulk_query
 
     return inner
+
+
+@pytest_asyncio.fixture(name='es_single_person_bulks_valid', params=['es_person_with_four_films', 'es_person_with_two_films', 'es_person_without_films'])
+def es_single_person_bulks_valid(request):
+    """Fixture, containing all correct single person fixtures, used in tests."""
+    fixture = request.param
+    return request.getfixturevalue(fixture)

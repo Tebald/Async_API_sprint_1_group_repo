@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional
+from typing import Optional, Any
 
 
 def _actors_stub():
@@ -34,9 +34,9 @@ def generate_film_data(
     title_prefix: str,
     count: int,
     genres: Optional[list[dict]] = None,
-    director: Optional[list[dict]] = None,
-    actor: Optional[list[dict]] = None,
-    writer: Optional[list[dict]] = None,
+    directors: Optional[list[dict]] = None,
+    actors: Optional[list[dict]] = None,
+    writers: Optional[list[dict]] = None,
 ) -> list[dict[str, Any]]:
     """Generate list of films.
 
@@ -45,9 +45,9 @@ def generate_film_data(
     :param title_prefix: A prefix for movie title. Title will be '{title_prefix} Movie {serial movie number}'.
     :param count: A count of movies.
     :param genres: Optional. A list of genres. Each genre must be in format {'id': genre_id, 'name': genre_name}.
-    :param director: Optional. A list of directors. Each director must be in format {'id': director_id, 'name': director_name}.
-    :param actor: Optional. A list of actors. Each actor must be in format {'id': actor_id, 'name': actor_name}.
-    :param writer: Optional. A list of writers. Each writer must be in format {'id': writer_id, 'name': writer_name}
+    :param directors: Optional. A list of directors. Each director must be in format {'id': director_id, 'name': director_name}.
+    :param actors: Optional. A list of actors. Each actor must be in format {'id': actor_id, 'name': actor_name}.
+    :param writers: Optional. A list of writers. Each writer must be in format {'id': writer_id, 'name': writer_name}
 
     :return: A list of generated films.
     """
@@ -58,12 +58,12 @@ def generate_film_data(
             'genre': genres if genres else _genres_stub(),
             'title': f'{title_prefix} Movie {i}',
             'description': f'{title_prefix} themed movie',
-            'directors': director or _directors_stub(),
-            'actors': actor or _actors_stub(),
-            'writers': writer or _writers_stub(),
-            'directors_names': [direct['name'] for direct in director or _directors_stub()],
-            'actors_names': [ac['name'] for ac in actor or _actors_stub()],
-            'writers_names': [writ['name'] for writ in writer or _writers_stub()],
+            'directors': directors or _directors_stub(),
+            'actors': actors or _actors_stub(),
+            'writers': writers or _writers_stub(),
+            'directors_names': [director['name'] for director in directors or _directors_stub()],
+            'actors_names': [actor['name'] for actor in actors or _actors_stub()],
+            'writers_names': [writer['name'] for writer in writers or _writers_stub()],
         }
         for i in range(count)
     ]
