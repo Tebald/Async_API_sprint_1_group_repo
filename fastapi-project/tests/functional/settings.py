@@ -24,7 +24,8 @@ class TestBaseSettings(BaseSettings):
     redis_host: str = Field('127.0.0.1', env='REDIS_HOST')
     redis_port: int = Field(6379, env='REDIS_PORT')
 
-    service_url: str = Field('http://0.0.0.0:8000', env='SERVICE_HOST')
+    service_host: str = Field('0.0.0.0', env='API_HOST')
+    service_port: int = Field(8000, env='API_PORT')
 
     class Config:
         env_file = '../.env'

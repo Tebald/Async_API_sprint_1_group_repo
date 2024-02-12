@@ -141,3 +141,55 @@ async def test_persons_search(
 
     assert status == expected_answer['status']
     assert len(body.get('items', [])) == expected_answer['length']
+
+
+@pytest.mark.parametrize("endpoint, query, cache_key, prepare_data_func_name, settings", [
+    (
+            '/api/v1/films/search/',
+            {'query': 'Movie', 'page_number': 1, 'page_size': 50},
+            "FilmsService{'search': {'field': 'title', 'value': 'Movie'}, 'page_number': 1, 'size': 50}",
+            'es_films_search_data',
+            movies_test_settings
+    ),
+    (
+            '/api/v1/persons/search/',
+            {'query': 'Nash', 'page_number': 1, 'page_size': 50},
+            "PersonsService{'search': {'field': 'full_name', 'value': 'Nash'}, 'page_number': 1, 'size': 50}",
+            'es_persons_search_data',
+            persons_test_settings
+    )
+])
+@pytest.mark.asyncio
+async def test_films_search_cache(
+        redis_client,
+        es_delete_data,
+        es_write_data,
+        api_make_get_request,
+        prepare_data_func_name,
+        prepare_search_data_factory,
+        endpoint,
+        cache_key,
+        query,
+        settings
+):
+    """
+    Test for Redis cache on
+    /api/v1/films/search/
+    /api/v1/persons/search/
+    endpoints.
+    """
+    prepare_data_func = prepare_search_data_factory(prepare_data_func_name)
+    data = await prepare_data_func
+    await es_write_data(data=data, settings=settings)
+
+    from_es_status, from_es_body = await api_make_get_request(query, endpoint)
+    assert from_es_status == 200
+
+    assert await redis_client.exists(cache_key) == 1
+
+    await es_delete_data(settings)
+
+    from_cache_status, from_cache_body = await api_make_get_request(query, endpoint)
+
+    assert from_cache_status == 200
+    assert from_es_body.get('items') == from_cache_body.get('items')
