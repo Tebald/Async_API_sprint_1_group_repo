@@ -1,0 +1,23 @@
+services:
+  redis:
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+
+  elasticsearch:
+    ports:
+      - ${ES_PORT}:${ES_PORT}
+    volumes:
+      - es_data_dev:/usr/share/elasticsearch/data
+
+  api:
+    build:
+      context: ./fastapi-project
+      target: dev
+    ports:
+      - ${API_PORT}:${API_PORT}
+    volumes:
+      - ./fastapi-project/src:/app/src
+      - ./fastapi-project/main.py:/app/main.py
+
+volumes:
+  es_data_dev:

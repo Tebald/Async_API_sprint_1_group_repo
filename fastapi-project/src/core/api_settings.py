@@ -15,11 +15,11 @@ class Settings(BaseSettings):
     console_log_lvl: str = Field('DEBUG', env='API_CONSOLE_LOG_LVL')
     loggers_handlers_log_lvl: str = Field('INFO', env='API_LOGGERS_HANDLERS_LOG')
     unicorn_error_log_lvl: str = Field('INFO', env='API_UNICORN_ERROR_LOG_LVL')
-    unicorn_acess_log_lvl: str = Field('INFO', env='API_UNICORN_ACCESS_LOG_LVL')
+    unicorn_access_log_lvl: str = Field('INFO', env='API_UNICORN_ACCESS_LOG_LVL')
     root_log_lvl: str = Field('INFO', env='API_ROOT_LOG_LVL')
 
     class Config:
-        env_file = '../../.env'
+        env_file = '../.env'
 
 
 settings = Settings()
