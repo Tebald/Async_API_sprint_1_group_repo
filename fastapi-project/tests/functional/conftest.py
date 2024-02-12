@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+import backoff
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
@@ -27,25 +28,36 @@ async def client_session():
 @pytest_asyncio.fixture(name='es_client', scope='session')
 async def es_client():
     host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
-    es_client = AsyncElasticsearch(hosts=host, verify_certs=False)
+    @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
+    async def get_es_client():
+        return AsyncElasticsearch(hosts=[host], verify_certs=False)
+
+    es_client = await get_es_client()
     yield es_client
     await es_client.close()
 
 
 @pytest_asyncio.fixture(name='redis_client', scope='session')
 async def redis_client():
-    redis_client = Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port)
+    @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
+    async def get_redis_client():
+        client = Redis(host=test_base_settings.redis_host, port=test_base_settings.redis_port, decode_responses=True)
+        return client
+
+    redis_client = await get_redis_client()
     yield redis_client
     await redis_client.close()
 
 
 @pytest_asyncio.fixture(name='redis_clear', autouse=True)
+@backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
 async def redis_clear(redis_client):
     await redis_client.flushdb(asynchronous=True)
 
 
 @pytest_asyncio.fixture(name='es_write_data')
 def es_write_data(es_client):
+    @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def inner(data: list[dict], settings: test_index_settings):
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
@@ -63,6 +75,7 @@ def es_write_data(es_client):
 
 @pytest_asyncio.fixture(name='es_delete_data')
 def es_delete_data(es_client):
+    @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def inner(settings: test_index_settings):
         if await es_client.indices.exists(index=settings.es_index):
             await es_client.indices.delete(index=settings.es_index)
@@ -77,7 +90,7 @@ def es_delete_data(es_client):
 
 @pytest_asyncio.fixture(name='api_make_get_request')
 def api_make_get_request(client_session):
-
+    @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def inner(query_data: dict, endpoint: str):
         """
         :param query_data: {'query': 'The Star', 'page_number': 1, 'page_size': 50}

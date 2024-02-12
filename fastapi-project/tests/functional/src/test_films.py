@@ -101,7 +101,7 @@ async def test_list_films_genre_filtering(
     (
             '/api/v1/films',
             {},
-            "{'sort': '-imdb_rating', 'genre': None, 'page_number': 1, 'size': 50}",
+            "FilmsService{'sort': '-imdb_rating', 'filters': [None], 'page_number': 1, 'size': 50}",
             'es_films_search_data'
     ),
 
