@@ -4,7 +4,7 @@ from typing import List, Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import UUID4
 from src.api.pagination import Page
-from src.api.validators import check_params
+from src.api.params import Params
 from src.schemas import PersonSchema
 from src.schemas.films import FilmShort
 from src.services import FilmsService, get_films_service
@@ -23,6 +23,8 @@ router = APIRouter()
 async def search_persons(
     query: Annotated[str, Query('', description="Person's name for searching", min_length=1)],
     person_service: PersonsService = Depends(get_persons_service),
+        page: int = Query(1, ge=1, description="Page number", alias='page_number'),
+        size: int = Query(50, ge=1, le=100, description="Page size", alias='page_size')
 ):
     """
     Search person by full_name.
@@ -30,10 +32,10 @@ async def search_persons(
     Available options:
     - Search by full_name.
     """
+    params = Params(page, size)
     search = {'field': 'full_name', 'value': query}
-    params = check_params()
     persons, total = await person_service.get_many(
-        search=search, page_number=params.page, size=params.size
+        search=search, page_number=page, size=size
     )
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Not Found')

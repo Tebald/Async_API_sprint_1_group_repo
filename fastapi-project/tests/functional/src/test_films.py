@@ -1,9 +1,9 @@
 """
 Group of tests for checking /api/v1/films/ endpoint.
 """
-import pytest
 from http import HTTPStatus
 
+import pytest
 from tests.functional import movies_test_settings
 from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_single_film  # noqa: F401
 
