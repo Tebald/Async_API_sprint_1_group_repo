@@ -6,9 +6,14 @@ from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 import logging
 
+from src.core.logger import setup_logging
 from src.api.v1 import films, genres, persons
 from src.core.api_settings import settings
 from src.db import _redis, elastic
+
+
+setup_logging()
+
 
 app = FastAPI(
     title=settings.project_name,
