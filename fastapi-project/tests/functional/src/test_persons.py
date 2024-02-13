@@ -2,7 +2,6 @@ from http import HTTPStatus
 import pytest
 from redis.asyncio.client import Redis
 
-from tests.functional.conftest import api_make_get_request, es_delete_record
 from tests.functional.settings import persons_test_settings
 from tests.functional.testdata.elasticsearch_input import from_dict_to_bulk, es_single_person_bulks_valid
 from tests.functional.testdata.elasticsearch_input import (  # type: ignore # isort: skip

@@ -5,7 +5,6 @@ Group of tests for checking
 from http import HTTPStatus
 import pytest
 
-from tests.functional.conftest import api_make_get_request, es_write_data  # noqa: F401
 from tests.functional.settings import movies_test_settings, persons_test_settings
 from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_persons_search_data  # noqa: F401
 
