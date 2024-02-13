@@ -32,5 +32,7 @@ FROM base as tests
 
 COPY --from=base /app /app
 COPY tests tests
+ENV PYTHONPATH /app
+RUN chmod 774 ./tests/functional/utils/tests_entrypoint.sh
 
-ENTRYPOINT [ "pytest", "-rP", "./tests/functional/src" ]
+ENTRYPOINT [ "./tests/functional/utils/tests_entrypoint.sh" ]

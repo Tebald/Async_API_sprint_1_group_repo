@@ -1,4 +1,6 @@
-from .api_settings import settings
+from logging import config
+
+from src.core.api_settings import settings
 
 LOGGING = {
     'version': 1,
@@ -52,3 +54,7 @@ LOGGING = {
         'handlers': settings.log_default_handlers,
     },
 }
+
+
+def setup_logging():
+    config.dictConfig(LOGGING)

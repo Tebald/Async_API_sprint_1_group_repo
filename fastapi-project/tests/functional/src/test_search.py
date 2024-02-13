@@ -2,9 +2,9 @@
 Group of tests for checking
 /api/v1/films/search and /api/v1/persons/search/ endpoints.
 """
+from http import HTTPStatus
 import pytest
 
-from tests.functional.conftest import api_make_get_request, es_write_data  # noqa: F401
 from tests.functional.settings import movies_test_settings, persons_test_settings
 from tests.functional.testdata.elasticsearch_input import es_films_search_data, es_persons_search_data  # noqa: F401
 
@@ -14,41 +14,41 @@ from tests.functional.testdata.elasticsearch_input import es_films_search_data, 
     [
         (
                 {'query': 'Movie', 'page_number': 1, 'page_size': 50},
-                {'status': 200, 'length': 50}
+                {'status': HTTPStatus.OK, 'length': 50}
         ),
         (
                 {'query': 'Mashed potato', 'page_number': 1, 'page_size': 50},
-                {'status': 404, 'length': 0}
+                {'status': HTTPStatus.NOT_FOUND, 'length': 0}
         ),
         (
                 {'query': 'The Star', 'page_number': 0, 'page_size': 50},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'The Star', 'page_number': 1, 'page_size': 0},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'The Star', 'page_number': 1, 'page_size': 101},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'The Star', 'page_number': 'a', 'page_size': 50},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'The Star', 'page_number': 1, 'page_size': 'b'},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         # The following two parameters do not work properly, since
         # 'str' type transformed to 'int' somewhere inside aiohttp.ClientSession().
         # (
         #         {'query': 'The Star', 'page_number': '1', 'page_size': 50},
-        #         {'status': 422, 'length': 0}
+        #         {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         # ),
         # (
         #         {'query': 'The Star', 'page_number': 1, 'page_size': '50'},
-        #         {'status': 422, 'length': 0}
+        #         {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         # ),
     ]
 )
@@ -72,7 +72,6 @@ async def test_films_search(
     :return:
     """
     es_data = await es_films_search_data()
-
     await es_write_data(data=es_data, settings=movies_test_settings)
 
     status, body = await api_make_get_request(query_data=query_data, endpoint='/api/v1/films/search/')
@@ -86,31 +85,31 @@ async def test_films_search(
     [
         (
                 {'query': 'Nash Bridges', 'page_number': 1, 'page_size': 50},
-                {'status': 200, 'length': 50}
+                {'status': HTTPStatus.OK, 'length': 50}
         ),
         (
                 {'query': 'Don Johnson', 'page_number': 1, 'page_size': 50},
-                {'status': 404, 'length': 0}
+                {'status': HTTPStatus.NOT_FOUND, 'length': 0}
         ),
         (
                 {'query': 'Nash Bridges', 'page_number': 0, 'page_size': 50},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'Nash Bridges', 'page_number': 1, 'page_size': 0},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'Nash Bridges', 'page_number': 1, 'page_size': 101},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'Nash Bridges', 'page_number': 'a', 'page_size': 50},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
         (
                 {'query': 'Nash Bridges', 'page_number': 1, 'page_size': 'b'},
-                {'status': 422, 'length': 0}
+                {'status': HTTPStatus.UNPROCESSABLE_ENTITY, 'length': 0}
         ),
     ]
 )
@@ -134,7 +133,6 @@ async def test_persons_search(
     :return:
     """
     es_data = await es_persons_search_data()
-
     await es_write_data(data=es_data, settings=persons_test_settings)
 
     status, body = await api_make_get_request(query_data=query_data, endpoint='/api/v1/persons/search/')
@@ -183,13 +181,13 @@ async def test_films_search_cache(
     await es_write_data(data=data, settings=settings)
 
     from_es_status, from_es_body = await api_make_get_request(query, endpoint)
-    assert from_es_status == 200
 
+    assert from_es_status == HTTPStatus.OK
     assert await redis_client.exists(cache_key) == 1
 
     await es_delete_data(settings)
 
     from_cache_status, from_cache_body = await api_make_get_request(query, endpoint)
 
-    assert from_cache_status == 200
+    assert from_cache_status == HTTPStatus.OK
     assert from_es_body.get('items') == from_cache_body.get('items')
