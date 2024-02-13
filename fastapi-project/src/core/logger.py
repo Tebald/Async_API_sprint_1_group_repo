@@ -1,6 +1,6 @@
 from logging import config
 
-from .api_settings import settings
+from src.core.api_settings import settings
 
 LOGGING = {
     'version': 1,
@@ -55,4 +55,5 @@ LOGGING = {
     },
 }
 
-config.dictConfig(LOGGING)
+def setup_logging():
+    config.dictConfig(LOGGING)
