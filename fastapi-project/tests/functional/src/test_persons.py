@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import pytest
 from redis.asyncio.client import Redis
 
@@ -29,13 +30,12 @@ async def test_person_details(es_single_person_bulks_valid, es_write_data, api_m
     """
     person_bulk = es_single_person_bulks_valid
     person = person_bulk[0]['_source']
-
     await es_write_data(data=person_bulk, settings=persons_test_settings)
-
     endpoint = '/api/v1/persons/' + person['id']
+
     status, body = await api_make_get_request(query_data={}, endpoint=endpoint)
 
-    assert status == 200
+    assert status == HTTPStatus.OK
     assert body.get('uuid') == person.get('id')
     del body['uuid'], person['id']
     assert body == person
@@ -56,14 +56,14 @@ async def test_person_films(es_single_person_bulks_valid, es_write_data, api_mak
     person_bulk = es_single_person_bulks_valid
     person = person_bulk[0]['_source']
     await es_write_data(data=person_bulk, settings=persons_test_settings)
-
     endpoint = f'/api/v1/persons/{person["id"]}/film'
+
     status, body = await api_make_get_request(query_data={}, endpoint=endpoint)
 
     if body == {'detail': 'Not Found'}:
         assert len(person['films']) == 0
     else:
-        assert status == 200
+        assert status == HTTPStatus.OK
         assert len(person['films']) == len(body)
 
 
@@ -90,21 +90,19 @@ async def test_person_cache(
     """
     person_bulk = es_single_person_bulks_valid
     person = person_bulk[0]['_source']
-
     await es_write_data(data=person_bulk, settings=persons_test_settings)
-
     endpoint = f'/api/v1/persons/{person["id"]}'
 
     es_status, es_body = await api_make_get_request(query_data={}, endpoint=endpoint)
 
-    assert es_status == 200
+    assert es_status == HTTPStatus.OK
     assert await redis_client.exists(person['id']) == 1
 
     await es_delete_record(index='persons', object_id=person['id'])
 
     cache_status, cache_body = await api_make_get_request(query_data={}, endpoint=endpoint)
-    assert cache_status == 200
 
+    assert cache_status == HTTPStatus.OK
     assert es_body == cache_body
 
 
@@ -116,12 +114,10 @@ async def test_invalid_person_films(es_person_with_inexisting_films, es_write_da
     """
     person_bulk, expected_count = es_person_with_inexisting_films
     person = person_bulk[0]['_source']
-
     await es_write_data(data=person_bulk, settings=persons_test_settings)
-
     endpoint = f'/api/v1/persons/{person["id"]}/film'
-    status, body = await api_make_get_request(query_data={}, endpoint=endpoint)
 
+    status, body = await api_make_get_request(query_data={}, endpoint=endpoint)
     api_count = 0 if body == {'detail': 'Not Found'} else len(body)
 
     assert expected_count == api_count
