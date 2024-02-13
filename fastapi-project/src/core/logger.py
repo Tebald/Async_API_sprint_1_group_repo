@@ -1,3 +1,5 @@
+from logging import config
+
 from .api_settings import settings
 
 LOGGING = {
@@ -52,3 +54,5 @@ LOGGING = {
         'handlers': settings.log_default_handlers,
     },
 }
+
+config.dictConfig(LOGGING)

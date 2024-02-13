@@ -7,12 +7,11 @@ from redis.asyncio import Redis
 import logging
 
 from src.api.v1 import films, genres, persons
-from src.core import config
 from src.core.api_settings import settings
 from src.db import _redis, elastic
 
 app = FastAPI(
-    title=config.PROJECT_NAME,
+    title=settings.project_name,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
@@ -24,8 +23,8 @@ app = FastAPI(
 @app.on_event('startup')
 async def startup():
     logging.debug('Config: %s', vars(settings))
-    _redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
-    elastic.es = AsyncElasticsearch(hosts=[f'{config.ES_HOST}:{config.ES_PORT}'])
+    _redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    elastic.es = AsyncElasticsearch(hosts=[f'{settings.es_host}:{settings.es_port}'])
 
 
 @app.on_event('shutdown')
