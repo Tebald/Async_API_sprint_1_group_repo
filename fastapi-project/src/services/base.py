@@ -1,7 +1,9 @@
+import logging
 from functools import lru_cache
 from typing import Optional
 
 from fastapi import Depends
+
 from src.models import ElasticModel
 from src.schemas import Schema
 from src.services._redis import RedisService, get_redis_service
@@ -66,9 +68,11 @@ class BaseService:
         record_key = self.__class__.__name__ + str(kwargs)
         kwargs = self.kwargs_transformer.transform(kwargs)
 
+        logging.debug('kwargs: %s', kwargs)
         result = await self.redis_service.get_many(record_key, self.redis_model)
         if not result:
             result = await self.elastic_service.search(self.index, self.elastic_model, **kwargs)
+            logging.debug('Received response from elastic: %s', result)
             if result:
                 await self.redis_service.put_many(record_key, result)
 

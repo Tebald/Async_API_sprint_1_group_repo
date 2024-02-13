@@ -55,5 +55,6 @@ LOGGING = {
     },
 }
 
+
 def setup_logging():
     config.dictConfig(LOGGING)
