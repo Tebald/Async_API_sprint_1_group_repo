@@ -10,6 +10,7 @@ from tests.functional.settings import test_base_settings
 @pytest_asyncio.fixture(name='es_client', scope='session')
 async def es_client() -> AsyncElasticsearch:
     host = f'{test_base_settings.es_host}:{test_base_settings.es_port}'
+
     @backoff.on_exception(backoff.expo, Exception, max_time=30, jitter=backoff.random_jitter)
     async def get_es_client():
         return AsyncElasticsearch(hosts=[host], verify_certs=False)

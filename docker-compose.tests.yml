@@ -53,11 +53,6 @@ services:
     volumes:
       - ./fastapi-project/src:/app/src
       - ./fastapi-project/main.py:/app/main.py
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
 
 volumes:
   es_data_tests:
